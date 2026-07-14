@@ -2,7 +2,7 @@ $topbar-height: 60px;
 $sidebar-width: 238px;
 $sidebar-collapsed-width: 64px;
 
-/* Ultima-style indigo topbar spanning the full width */
+/* SaaS Light shell: white topbar with a hairline border, blue accents */
 .topbar {
   position: fixed;
   top: 0;
@@ -12,42 +12,56 @@ $sidebar-collapsed-width: 64px;
   z-index: 100;
   display: flex;
   align-items: center;
-  background: #3949ab;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
 
   .brand {
     width: $sidebar-width;
     padding-left: 1.5rem;
-    font-size: 1.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.08em;
+    color: #0f172a;
+    letter-spacing: 0.04em;
+
+    /* Blue logo mark before the wordmark */
+    &::before {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      background: #2563eb;
+      box-shadow: 0 0 0 4px #dbeafe;
+    }
   }
 
-  /* Amber circular toggle riding the sidebar edge, as in Ultima */
+  /* Circular collapse toggle riding the sidebar edge */
   .menu-toggle {
     position: absolute;
     left: $sidebar-width - 18px;
     top: ($topbar-height - 36px) * 0.5;
     width: 36px;
     height: 36px;
-    border: none;
+    border: 1px solid #e2e8f0;
     border-radius: 50%;
-    background: #ffc107;
-    color: #1e293b;
+    background: #ffffff;
+    color: #475569;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-    transition: left 0.2s ease;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    transition: left 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 
     &.shifted {
       left: $sidebar-collapsed-width - 18px;
     }
 
     &:hover {
-      background: #ffca28;
+      color: #2563eb;
+      border-color: #bfdbfe;
     }
 
     .pi {
@@ -64,10 +78,10 @@ $sidebar-collapsed-width: 64px;
   display: flex;
   min-height: 100vh;
   padding-top: $topbar-height;
-  background: #f5f7fb;
+  background: #f8fafc;
 }
 
-/* Ultima-style light sidebar */
+/* White sidebar with slate items and a blue active state */
 .sidebar {
   position: sticky;
   top: $topbar-height;
@@ -115,6 +129,7 @@ $sidebar-collapsed-width: 64px;
   letter-spacing: 0.06em;
   text-align: left;
   cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
   i {
     font-size: 1rem;
@@ -135,30 +150,34 @@ $sidebar-collapsed-width: 64px;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem 0.75rem 2rem;
+  padding: 0.7rem 1.25rem 0.7rem 2rem;
   color: #475569;
   font-size: 0.925rem;
   text-decoration: none;
   border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  margin-right: 0.75rem;
+  transition: color 0.2s ease, background-color 0.2s ease;
 
   i {
     font-size: 1rem;
     color: #64748b;
+    transition: color 0.2s ease;
   }
 
   &:hover {
-    color: #1e293b;
+    color: #0f172a;
     background: #f1f5f9;
   }
 
   &.active {
-    color: #1e293b;
+    color: #1d4ed8;
     font-weight: 700;
-    background: #eef2f7;
-    border-left-color: #10b981;
+    background: #eff6ff;
+    border-left-color: #2563eb;
 
     i {
-      color: #10b981;
+      color: #2563eb;
     }
   }
 }

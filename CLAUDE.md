@@ -19,7 +19,7 @@ Full-stack CMS generated from the SQL Server schemas in `database/*.sql`
 - `src/CMS.slnx` — solution (.NET SDK 10 format)
 - `src/CMS.API` — .NET 9 Web API, Dapper (no EF), Swagger at `/swagger`
 - `src/CMS.API.Tests` — xUnit + Moq
-- `src/CMS.NG` — Angular 20, PrimeNG 20 (Aura Emerald), Karma + Jasmine
+- `src/CMS.NG` — Angular 20, PrimeNG 20 (Aura, SaaS Light blue preset), Karma + Jasmine
 
 ## Commands
 

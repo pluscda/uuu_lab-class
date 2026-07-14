@@ -78,12 +78,16 @@ always-needed summary; this file is the detailed reference.
 ### Navigation / Sidebar
 
 - Add entry under the appropriate nav group in `app.html` / `app.ts` (`navGroups`), e.g. `系統管理 Admin`
-- Style reference: https://ultima.primeng.org/dashboards/analytics
-  - Indigo topbar (#3949ab) with brand + amber circular collapse toggle on the sidebar edge
+- **SaaS Light theme** (PrimeNG Aura preset with blue primary — see `app.config.ts`):
+  - Primary `#2563EB` (blue-600); app background `#F8FAFC` (slate-50); surfaces white with `#E2E8F0` borders
+  - Text: `#0F172A` headings, `#334155` body, `#64748B` muted minimum (never slate-400 — fails 4.5:1 contrast)
+  - White topbar with hairline bottom border; blue logo mark before the brand; white circular collapse toggle on the sidebar edge
   - White sidebar, uppercase muted group headers, slate items
-  - Active item: bold, light background, emerald left border + emerald icon
+  - Active item: bold, `#EFF6FF` background, blue left border + blue icon
+  - Typography: `Inter, 'Noto Sans TC', 'Microsoft JhengHei', system-ui` (Google Fonts loaded in `index.html`)
+  - Transitions 150–300ms on color/background only; `prefers-reduced-motion` respected globally
 - Layout shell lives in `app.html` / `app.scss` (topbar + `.sidebar` + `.content`)
-- Shared page styles in `styles.scss`: `.page-card`, `.page-toolbar`, `.field*`
+- Shared page styles in `styles.scss`: `.page-card` (white, 12px radius, border + subtle shadow), `.page-toolbar`, `.field*`
 
 ### Component unit tests
 

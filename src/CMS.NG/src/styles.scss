@@ -1,4 +1,4 @@
-/* Global styles */
+/* Global styles — SaaS Light theme */
 @use 'primeicons/primeicons.css';
 
 * {
@@ -10,15 +10,24 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Segoe UI', 'Microsoft JhengHei', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
   font-size: 14px;
   color: #334155;
+  background: #f8fafc;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: #0f172a;
 }
 
 .page-card {
   background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   padding: 1.25rem 1.5rem;
 }
 
@@ -38,11 +47,12 @@ body {
     h2 {
       margin: 0;
       font-size: 1.25rem;
-      color: #1e293b;
+      font-weight: 700;
+      color: #0f172a;
     }
 
     .subtitle {
-      color: #94a3b8;
+      color: #64748b;
       font-size: 0.95rem;
     }
   }
@@ -73,4 +83,14 @@ body {
   color: #ef4444;
   font-size: 0.8rem;
   margin-top: 0.25rem;
+}
+
+/* Respect users who prefer minimal motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
