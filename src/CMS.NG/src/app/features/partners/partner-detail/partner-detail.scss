@@ -1,0 +1,31 @@
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .detail-label {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  .detail-value {
+    color: #1e293b;
+    font-size: 0.975rem;
+  }
+}

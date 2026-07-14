@@ -1,0 +1,32 @@
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .field-label {
+    margin: 0;
+  }
+}
+
+.field-hint {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.roles-card {
+  margin-top: 1.25rem;
+}
+
+:host ::ng-deep .p-multiselect-label {
+  white-space: normal;
+}

@@ -12,4 +12,54 @@ public class LookupRepository(IDbConnectionFactory connectionFactory) : ILookupR
         return await connection.QueryAsync<AppUserLookup>(
             "SELECT UserId, UserName, IsActive FROM AppUser ORDER BY UserName ASC");
     }
+
+    public async Task<IEnumerable<AppRoleLookup>> GetAppRolesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<AppRoleLookup>(
+            "SELECT RoleId, RoleName FROM AppRole ORDER BY pkid ASC");
+    }
+
+    public async Task<IEnumerable<PublishStatusLookup>> GetPublishStatusesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PublishStatusLookup>(
+            "SELECT pkid, Description FROM PublishStatus ORDER BY pkid ASC");
+    }
+
+    public async Task<IEnumerable<PartnerLookup>> GetPartnersAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PartnerLookup>(
+            "SELECT pkid, Name FROM Partner ORDER BY DisplayOrder ASC");
+    }
+
+    public async Task<IEnumerable<CourseGroupLookup>> GetCourseGroupsAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<CourseGroupLookup>(
+            "SELECT pkid, Description FROM CourseGroup ORDER BY pkid ASC");
+    }
+
+    public async Task<IEnumerable<CertificationLookup>> GetCertificationsAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        // Title is nchar(100) — RTRIM required
+        return await connection.QueryAsync<CertificationLookup>(
+            "SELECT pkid, Partner_pkid AS PartnerPkid, RTRIM(Title) AS Title FROM Certification ORDER BY Partner_pkid ASC, Title ASC");
+    }
+
+    public async Task<IEnumerable<JobCategoryLookup>> GetJobCategoriesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<JobCategoryLookup>(
+            "SELECT pkid, Description FROM JobCategory ORDER BY pkid ASC");
+    }
+
+    public async Task<IEnumerable<CourseLookup>> GetCoursesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<CourseLookup>(
+            "SELECT pkid, CourseId, Title FROM Course ORDER BY CourseId ASC");
+    }
 }

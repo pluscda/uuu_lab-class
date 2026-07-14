@@ -1,0 +1,14 @@
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+:host ::ng-deep .filter-drawer {
+  width: 24rem;
+}

@@ -11,4 +11,32 @@ public class LookupsController(ILookupRepository repository) : ControllerBase
     [HttpGet("app-users")]
     public async Task<ActionResult<IEnumerable<AppUserLookup>>> GetAppUsers()
         => Ok(await repository.GetAppUsersAsync());
+
+    [HttpGet("app-roles")]
+    public async Task<ActionResult<IEnumerable<AppRoleLookup>>> GetAppRoles()
+        => Ok(await repository.GetAppRolesAsync());
+
+    [HttpGet("publish-statuses")]
+    public async Task<ActionResult<IEnumerable<PublishStatusLookup>>> GetPublishStatuses()
+        => Ok(await repository.GetPublishStatusesAsync());
+
+    [HttpGet("partners")]
+    public async Task<ActionResult<IEnumerable<PartnerLookup>>> GetPartners()
+        => Ok(await repository.GetPartnersAsync());
+
+    [HttpGet("course-groups")]
+    public async Task<ActionResult<IEnumerable<CourseGroupLookup>>> GetCourseGroups()
+        => Ok(await repository.GetCourseGroupsAsync());
+
+    [HttpGet("certifications")]
+    public async Task<ActionResult<IEnumerable<CertificationLookup>>> GetCertifications()
+        => Ok(await repository.GetCertificationsAsync());
+
+    [HttpGet("job-categories")]
+    public async Task<ActionResult<IEnumerable<JobCategoryLookup>>> GetJobCategories()
+        => Ok(await repository.GetJobCategoriesAsync());
+
+    [HttpGet("courses")]
+    public async Task<ActionResult<IEnumerable<CourseLookup>>> GetCourses()
+        => Ok(await repository.GetCoursesAsync());
 }

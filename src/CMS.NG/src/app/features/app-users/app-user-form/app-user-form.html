@@ -1,0 +1,62 @@
+<form [formGroup]="form" (ngSubmit)="save()">
+  <div class="page-toolbar">
+    <div class="page-title">
+      <h2>{{ isEdit() ? '編輯使用者' : '新增使用者' }}</h2>
+    </div>
+    <div class="toolbar-actions">
+      <p-button
+        label="取消"
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="cancel()" />
+      <p-button label="儲存" icon="pi pi-check" type="submit" [loading]="saving()" />
+    </div>
+  </div>
+
+  <div class="page-card">
+    <h3 class="section-title">使用者資料</h3>
+
+    <div class="field">
+      <label class="field-label" for="userId">使用者代碼<span class="required">*</span></label>
+      <input pInputText id="userId" class="w-full" formControlName="userId" placeholder="請輸入使用者代碼" />
+      @if (form.controls.userId.touched && form.controls.userId.hasError('required')) {
+        <div class="field-error">使用者代碼為必填</div>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="userName">使用者名稱<span class="required">*</span></label>
+      <input pInputText id="userName" class="w-full" formControlName="userName" />
+      @if (form.controls.userName.touched && form.controls.userName.hasError('required')) {
+        <div class="field-error">使用者名稱為必填</div>
+      }
+    </div>
+
+    <div class="field">
+      <div class="checkbox-field">
+        <p-checkbox inputId="isActive" formControlName="isActive" [binary]="true" />
+        <label class="field-label" for="isActive">是否啟用</label>
+      </div>
+    </div>
+
+    @if (!isEdit()) {
+      <div class="field-hint">新增後密碼將設為系統預設密碼。</div>
+    }
+  </div>
+
+  <div class="page-card roles-card">
+    <h3 class="section-title">角色</h3>
+    <p-multiselect
+      formControlName="roleIds"
+      [options]="roleOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="選擇角色（可複選）"
+      [filter]="true"
+      [maxSelectedLabels]="9999"
+      display="chip"
+      appendTo="body"
+      styleClass="w-full" />
+  </div>
+</form>

@@ -1,0 +1,30 @@
+<div class="page-toolbar">
+  <div class="page-title">
+    <h2>檢視課程群組</h2>
+    @if (group(); as g) {
+      <span class="subtitle">{{ g.description }}</span>
+    }
+  </div>
+  <div class="toolbar-actions">
+    <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
+    <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+  </div>
+</div>
+
+@if (group(); as g) {
+  <div class="page-card">
+    <h3 class="section-title">課程群組資料</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">主代碼</span>
+        <span class="detail-value">{{ g.pkid }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">群組說明</span>
+        <span class="detail-value">{{ g.description }}</span>
+      </div>
+    </div>
+  </div>
+} @else if (!loading()) {
+  <div class="page-card">查無資料</div>
+}

@@ -1,0 +1,172 @@
+<div class="page-toolbar">
+  <div class="page-title">
+    <h2>檢視課程</h2>
+    @if (course(); as c) {
+      <span class="subtitle">{{ c.courseId }} {{ c.title }}</span>
+    }
+  </div>
+  <div class="toolbar-actions">
+    <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
+    <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+  </div>
+</div>
+
+@if (course(); as c) {
+  <div class="page-card">
+    <h3 class="section-title">基本資料</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">主代碼</span>
+        <span class="detail-value">{{ c.pkid }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">顯示順序</span>
+        <span class="detail-value">{{ c.displayOrder }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">簡介代碼</span>
+        <span class="detail-value">{{ c.courseId }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">科目代碼</span>
+        <span class="detail-value">{{ c.prodCourseId }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">課程名稱</span>
+        <span class="detail-value">{{ c.title }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">官方課程名稱</span>
+        <span class="detail-value">{{ c.officialTitle || '—' }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">友善網址</span>
+        <span class="detail-value">{{ c.friendlyUrl }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">原廠</span>
+        <span class="detail-value">
+          <a [routerLink]="['/partners', c.partnerPkid]" class="detail-link">{{ c.partnerName }}</a>
+        </span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">課程群組</span>
+        <span class="detail-value">
+          @if (c.courseGroupPkid !== null) {
+            <a [routerLink]="['/course-groups', c.courseGroupPkid]" class="detail-link">
+              {{ c.courseGroupDescription }}
+            </a>
+          } @else {
+            —
+          }
+        </span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">上架狀態</span>
+        <span class="detail-value">
+          <a [routerLink]="['/publish-statuses', c.publishStatusPkid]" class="detail-link">
+            {{ c.publishStatusDescription }}
+          </a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-card">
+    <h3 class="section-title">排程與價格</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">上架日期</span>
+        <span class="detail-value">{{ c.scheduleOn }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">下架日期</span>
+        <span class="detail-value">{{ c.scheduleOff }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">時數</span>
+        <span class="detail-value">{{ c.hour }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">定價</span>
+        <span class="detail-value">{{ c.listPrice }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">點數</span>
+        <span class="detail-value">{{ c.learningCredit }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">允許重聽</span>
+        <span class="detail-value">
+          <p-tag [value]="c.canRepeat ? '是' : '否'" [severity]="c.canRepeat ? 'success' : 'secondary'" />
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-card">
+    <h3 class="section-title">課程內容</h3>
+    <div class="detail-grid">
+      <div class="detail-item full">
+        <span class="detail-label">教材</span>
+        <span class="detail-value pre-wrap">{{ c.material || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">課程目標</span>
+        <span class="detail-value pre-wrap">{{ c.objective || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">適合對象</span>
+        <span class="detail-value pre-wrap">{{ c.target || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">先備知識</span>
+        <span class="detail-value pre-wrap">{{ c.prerequisites || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">課程大綱</span>
+        <span class="detail-value pre-wrap">{{ c.outline || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">考試／認證說明</span>
+        <span class="detail-value pre-wrap">{{ c.towardCertOrExam || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">備註</span>
+        <span class="detail-value pre-wrap">{{ c.note || '—' }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">其他資訊</span>
+        <span class="detail-value pre-wrap">{{ c.otherInfo || '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-card">
+    <h3 class="section-title">對應認證（{{ c.certificationPkids.length }}）</h3>
+    @if (c.certificationPkids.length > 0) {
+      <div class="tag-list">
+        @for (pkid of c.certificationPkids; track pkid) {
+          <p-tag severity="secondary" [value]="certificationLabel(pkid)" />
+        }
+      </div>
+    } @else {
+      <span class="empty">尚無對應認證</span>
+    }
+  </div>
+
+  <div class="page-card">
+    <h3 class="section-title">職務類別（{{ c.jobCategoryPkids.length }}）</h3>
+    @if (c.jobCategoryPkids.length > 0) {
+      <div class="tag-list">
+        @for (pkid of c.jobCategoryPkids; track pkid) {
+          <p-tag severity="secondary" [value]="jobCategoryLabel(pkid)" />
+        }
+      </div>
+    } @else {
+      <span class="empty">尚無職務類別</span>
+    }
+  </div>
+} @else if (!loading()) {
+  <div class="page-card">查無資料</div>
+}
