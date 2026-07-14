@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

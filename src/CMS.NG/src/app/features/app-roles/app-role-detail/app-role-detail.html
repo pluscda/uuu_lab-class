@@ -1,0 +1,55 @@
+<div class="page-toolbar">
+  <div class="page-title">
+    <h2>檢視角色</h2>
+    @if (role(); as r) {
+      <span class="subtitle">{{ r.roleId }}</span>
+    }
+  </div>
+  <div class="toolbar-actions">
+    <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
+    <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+  </div>
+</div>
+
+@if (role(); as r) {
+  <div class="page-card">
+    <h3 class="section-title">角色資料</h3>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">主代碼</span>
+        <span class="detail-value">{{ r.pkid }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">角色代碼</span>
+        <span class="detail-value">{{ r.roleId }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">角色名稱</span>
+        <span class="detail-value">{{ r.roleName }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">權限等級</span>
+        <span class="detail-value">{{ r.permissionLevel }}</span>
+      </div>
+      <div class="detail-item full">
+        <span class="detail-label">描述</span>
+        <span class="detail-value">{{ r.description || '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-card users-card">
+    <h3 class="section-title">使用者（{{ r.userIds.length }}）</h3>
+    @if (r.userIds.length > 0) {
+      <div class="user-tags">
+        @for (userId of r.userIds; track userId) {
+          <p-tag severity="secondary" [value]="userLabel(userId)" />
+        }
+      </div>
+    } @else {
+      <span class="empty">尚無使用者</span>
+    }
+  </div>
+} @else if (!loading()) {
+  <div class="page-card">查無資料</div>
+}

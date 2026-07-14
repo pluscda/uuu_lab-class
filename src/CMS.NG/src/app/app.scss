@@ -1,0 +1,170 @@
+$topbar-height: 60px;
+$sidebar-width: 238px;
+$sidebar-collapsed-width: 64px;
+
+/* Ultima-style indigo topbar spanning the full width */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $topbar-height;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  background: #3949ab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+  .brand {
+    width: $sidebar-width;
+    padding-left: 1.5rem;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.08em;
+  }
+
+  /* Amber circular toggle riding the sidebar edge, as in Ultima */
+  .menu-toggle {
+    position: absolute;
+    left: $sidebar-width - 18px;
+    top: ($topbar-height - 36px) * 0.5;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: #ffc107;
+    color: #1e293b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: left 0.2s ease;
+
+    &.shifted {
+      left: $sidebar-collapsed-width - 18px;
+    }
+
+    &:hover {
+      background: #ffca28;
+    }
+
+    .pi {
+      font-size: 0.85rem;
+    }
+  }
+
+  &.collapsed .brand {
+    visibility: hidden;
+  }
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  padding-top: $topbar-height;
+  background: #f5f7fb;
+}
+
+/* Ultima-style light sidebar */
+.sidebar {
+  position: sticky;
+  top: $topbar-height;
+  align-self: flex-start;
+  height: calc(100vh - #{$topbar-height});
+  width: $sidebar-width;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+.layout.collapsed .sidebar {
+  width: $sidebar-collapsed-width;
+
+  .nav-label,
+  .chevron {
+    display: none;
+  }
+
+  .nav-item {
+    padding-left: 1.4rem;
+  }
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0;
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.8rem 1.25rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+
+  i {
+    font-size: 1rem;
+  }
+
+  .chevron {
+    margin-left: auto;
+    font-size: 0.7rem;
+  }
+
+  &:hover {
+    color: #334155;
+    background: #f8fafc;
+  }
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem 0.75rem 2rem;
+  color: #475569;
+  font-size: 0.925rem;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+
+  i {
+    font-size: 1rem;
+    color: #64748b;
+  }
+
+  &:hover {
+    color: #1e293b;
+    background: #f1f5f9;
+  }
+
+  &.active {
+    color: #1e293b;
+    font-weight: 700;
+    background: #eef2f7;
+    border-left-color: #10b981;
+
+    i {
+      color: #10b981;
+    }
+  }
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem;
+}

@@ -1,0 +1,40 @@
+<header class="topbar" [class.collapsed]="sidebarCollapsed()">
+  <span class="brand">CMS</span>
+  <button
+    type="button"
+    class="menu-toggle"
+    [class.shifted]="sidebarCollapsed()"
+    (click)="toggleSidebar()"
+    aria-label="Toggle sidebar">
+    <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
+  </button>
+</header>
+
+<div class="layout" [class.collapsed]="sidebarCollapsed()">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      @for (group of navGroups(); track group.label) {
+        <button type="button" class="nav-group" (click)="toggleGroup(group)">
+          <i [class]="group.icon"></i>
+          <span class="nav-label">{{ group.label }}</span>
+          <i class="pi chevron" [class.pi-angle-down]="group.expanded" [class.pi-angle-right]="!group.expanded"></i>
+        </button>
+        @if (group.expanded) {
+          @for (item of group.items; track item.route) {
+            <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+              <i [class]="item.icon"></i>
+              <span class="nav-label">{{ item.label }}</span>
+            </a>
+          }
+        }
+      }
+    </nav>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
+
+<p-toast position="top-right" />
+<p-confirmdialog />
