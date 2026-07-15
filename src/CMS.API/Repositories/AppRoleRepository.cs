@@ -1,14 +1,25 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRoleRepository
+public class AppRoleRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IAppRoleRepository
 {
+    private const string TableName = "AppRole";
+
     private const string SelectSql = """
         SELECT r.pkid, r.RoleId, r.RoleName, r.PermissionLevel, r.Description,
                (SELECT COUNT(*) FROM AppUserRole ur WHERE ur.RoleId = r.RoleId) AS UserCount
+        FROM AppRole r
+        """;
+
+    // Real AppRole columns only — no UserCount subquery, so the update diff never
+    // reports a pseudo-column when only role assignments changed.
+    private const string AuditSelectSql = """
+        SELECT r.pkid, r.RoleId, r.RoleName, r.PermissionLevel, r.Description
         FROM AppRole r
         """;
 
@@ -73,6 +84,10 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
 
         await InsertUserRolesAsync(connection, transaction, request);
 
+        var created = await GetForAuditAsync(connection, transaction, request.RoleId);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection, transaction);
+
         transaction.Commit();
         return pkid;
     }
@@ -82,6 +97,8 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
+
+        var before = await GetForAuditAsync(connection, transaction, request.RoleId);
 
         var affected = await connection.ExecuteAsync("""
             UPDATE AppRole
@@ -101,6 +118,10 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
             new { request.RoleId }, transaction);
         await InsertUserRolesAsync(connection, transaction, request);
 
+        var after = await GetForAuditAsync(connection, transaction, request.RoleId);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection, transaction);
+
         transaction.Commit();
         return true;
     }
@@ -111,12 +132,17 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
+        var row = await GetForAuditAsync(connection, transaction, roleId);
+
         await connection.ExecuteAsync(
             "DELETE FROM AppUserRole WHERE RoleId = @RoleId",
             new { RoleId = roleId }, transaction);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM AppRole WHERE RoleId = @RoleId",
             new { RoleId = roleId }, transaction);
+
+        if (affected > 0 && row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection, transaction);
 
         transaction.Commit();
         return affected > 0;
@@ -130,8 +156,13 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
         return count > 0;
     }
 
+    private static Task<AppRole?> GetForAuditAsync(
+        IDbConnection connection, IDbTransaction transaction, string roleId) =>
+        connection.QuerySingleOrDefaultAsync<AppRole>(
+            $"{AuditSelectSql} WHERE r.RoleId = @RoleId", new { RoleId = roleId }, transaction);
+
     private static async Task InsertUserRolesAsync(
-        System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, AppRoleRequest request)
+        IDbConnection connection, IDbTransaction transaction, AppRoleRequest request)
     {
         if (request.UserIds.Count == 0) return;
         await connection.ExecuteAsync(

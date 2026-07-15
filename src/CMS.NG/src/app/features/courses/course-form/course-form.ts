@@ -15,6 +15,7 @@ import { CourseRequest } from '../../../core/models/course.model';
 import { CourseService } from '../../../core/services/course.service';
 import { LookupService } from '../../../core/services/lookup.service';
 import { addYears, parseIso, toIso } from '../../../core/utils/date.util';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 @Component({
   selector: 'app-course-form',
@@ -27,7 +28,8 @@ import { addYears, parseIso, toIso } from '../../../core/utils/date.util';
     SelectModule,
     MultiSelectModule,
     DatePickerModule,
-    CheckboxModule
+    CheckboxModule,
+    RowAuditBadgeComponent
   ],
   templateUrl: './course-form.html',
   styleUrl: './course-form.scss'
@@ -42,6 +44,8 @@ export class CourseForm implements OnInit {
 
   readonly isEdit = signal(false);
   readonly saving = signal(false);
+  // Set only in edit mode — the audit badge needs the existing record's pkid.
+  readonly pkid = signal<number | null>(null);
   readonly partnerOptions = signal<{ pkid: number; label: string }[]>([]);
   readonly courseGroupOptions = signal<{ pkid: number; label: string }[]>([]);
   readonly publishStatusOptions = signal<{ pkid: number; label: string }[]>([]);
@@ -98,6 +102,7 @@ export class CourseForm implements OnInit {
     };
 
     if (id) {
+      this.pkid.set(Number(id));
       forkJoin({ ...lookups$, course: this.service.getById(Number(id)) }).subscribe({
         next: result => {
           this.setOptions(result);

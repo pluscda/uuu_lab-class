@@ -12,6 +12,7 @@ import { MessageService } from 'primeng/api';
 import { AppRoleRequest, AppUserLookup } from '../../../core/models/app-role.model';
 import { AppRoleService } from '../../../core/services/app-role.service';
 import { LookupService } from '../../../core/services/lookup.service';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 @Component({
   selector: 'app-app-role-form',
@@ -21,7 +22,8 @@ import { LookupService } from '../../../core/services/lookup.service';
     InputTextModule,
     InputNumberModule,
     TextareaModule,
-    MultiSelectModule
+    MultiSelectModule,
+    RowAuditBadgeComponent
   ],
   templateUrl: './app-role-form.html',
   styleUrl: './app-role-form.scss'
@@ -37,6 +39,9 @@ export class AppRoleForm implements OnInit {
   readonly isEdit = signal(false);
   readonly saving = signal(false);
   readonly userOptions = signal<{ value: string; label: string }[]>([]);
+  // The route carries the string RoleId; the audit badge needs the surrogate
+  // int pkid, so it is set from the loaded record in edit mode.
+  readonly pkid = signal<number | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     roleId: ['', [Validators.required, Validators.maxLength(200)]],
@@ -57,6 +62,7 @@ export class AppRoleForm implements OnInit {
         users: this.lookupService.getAppUsers()
       }).subscribe({
         next: ({ role, users }) => {
+          this.pkid.set(role.pkid);
           this.setUserOptions(users);
           this.form.patchValue({
             roleId: role.roleId,

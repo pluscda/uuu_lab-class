@@ -12,6 +12,7 @@ import { AppRoleLookup, AppUserRequest } from '../../../core/models/app-user.mod
 import { AppUserService } from '../../../core/services/app-user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LookupService } from '../../../core/services/lookup.service';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 @Component({
   selector: 'app-app-user-form',
@@ -20,7 +21,8 @@ import { LookupService } from '../../../core/services/lookup.service';
     ButtonModule,
     InputTextModule,
     CheckboxModule,
-    MultiSelectModule
+    MultiSelectModule,
+    RowAuditBadgeComponent
   ],
   templateUrl: './app-user-form.html',
   styleUrl: './app-user-form.scss'
@@ -40,6 +42,9 @@ export class AppUserForm implements OnInit {
   readonly isEdit = signal(false);
   readonly saving = signal(false);
   readonly resetting = signal(false);
+  // The route carries the string UserId; the audit badge needs the surrogate
+  // int pkid, so it is set from the loaded record in edit mode.
+  readonly pkid = signal<number | null>(null);
   readonly roleOptions = signal<{ value: string; label: string }[]>([]);
 
   // No password field: PasswordHash is backend-only and seeded from the
@@ -62,6 +67,7 @@ export class AppUserForm implements OnInit {
         roles: this.lookupService.getAppRoles()
       }).subscribe({
         next: ({ user, roles }) => {
+          this.pkid.set(user.pkid);
           this.setRoleOptions(roles);
           this.form.patchValue({
             userId: user.userId,

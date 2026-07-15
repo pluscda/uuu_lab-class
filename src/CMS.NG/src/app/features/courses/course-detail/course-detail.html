@@ -3,6 +3,7 @@
     <h2>檢視課程</h2>
     @if (course(); as c) {
       <span class="subtitle">{{ c.courseId }} {{ c.title }}</span>
+      <app-row-audit-badge tableName="Course" [pkid]="c.pkid" />
     }
   </div>
   <div class="toolbar-actions">

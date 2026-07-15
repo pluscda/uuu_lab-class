@@ -11,6 +11,13 @@ import { Partner } from '../../../core/models/partner.model';
 
 const baseUrl = `${environment.apiUrl}/partners`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const microsoftPartner: Partner = {
   pkid: 1,
   name: 'Microsoft',
@@ -61,7 +68,7 @@ describe('PartnerForm (add mode)', () => {
     expect(component.isEdit()).toBeFalse();
     expect(component.form.controls.name.value).toBe('');
     expect(component.form.controls.displayOrder.value).toBe(0);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -73,7 +80,7 @@ describe('PartnerForm (add mode)', () => {
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.name.touched).toBeTrue();
     expect(component.form.controls.appKey.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new partner and navigate back to the list', () => {
@@ -97,7 +104,7 @@ describe('PartnerForm (add mode)', () => {
     req.flush({ pkid: 7 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/partners']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -112,7 +119,7 @@ describe('PartnerForm (edit mode)', () => {
     expect(component.form.controls.name.value).toBe('Microsoft');
     expect(component.form.controls.pkid.value).toBe(1);
     expect(component.form.controls.imageFilename.value).toBe('microsoft.png');
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated partner with the pkid from the loaded record', () => {
@@ -132,6 +139,6 @@ describe('PartnerForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/partners']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });

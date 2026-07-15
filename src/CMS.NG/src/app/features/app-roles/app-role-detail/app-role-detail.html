@@ -3,6 +3,7 @@
     <h2>檢視角色</h2>
     @if (role(); as r) {
       <span class="subtitle">{{ r.roleId }}</span>
+      <app-row-audit-badge tableName="AppRole" [pkid]="r.pkid" />
     }
   </div>
   <div class="toolbar-actions">

@@ -8,12 +8,13 @@ import { CertificationLookup, Course, JobCategoryLookup } from '../../../core/mo
 import { CourseService } from '../../../core/services/course.service';
 import { LookupService } from '../../../core/services/lookup.service';
 import { QrCodeService } from '../../../core/services/qr-code.service';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 const COURSE_SHOW_URL_BASE = 'https://www.uuu.com.tw/Course/Show';
 
 @Component({
   selector: 'app-course-detail',
-  imports: [RouterLink, ButtonModule, TagModule],
+  imports: [RouterLink, ButtonModule, TagModule, RowAuditBadgeComponent],
   templateUrl: './course-detail.html',
   styleUrl: './course-detail.scss'
 })

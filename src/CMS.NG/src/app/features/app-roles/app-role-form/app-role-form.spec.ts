@@ -12,6 +12,13 @@ import { AppRole } from '../../../core/models/app-role.model';
 const baseUrl = `${environment.apiUrl}/app-roles`;
 const usersUrl = `${environment.apiUrl}/lookups/app-users`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const users = [
   { userId: 'helen', userName: 'helen', isActive: true },
   { userId: 'miles@uuu.com.tw', userName: 'Miles Sun', isActive: true }
@@ -68,7 +75,7 @@ describe('AppRoleForm (add mode)', () => {
     expect(component.isEdit()).toBeFalse();
     expect(component.form.controls.roleId.enabled).toBeTrue();
     expect(component.form.controls.permissionLevel.value).toBe(100);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -80,7 +87,7 @@ describe('AppRoleForm (add mode)', () => {
 
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.roleId.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new role and navigate back to the list', () => {
@@ -104,7 +111,7 @@ describe('AppRoleForm (add mode)', () => {
     req.flush({ pkid: 3 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/app-roles']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -120,7 +127,7 @@ describe('AppRoleForm (edit mode)', () => {
     expect(component.form.controls.roleId.disabled).toBeTrue();
     expect(component.form.controls.roleName.value).toBe('Administrator');
     expect(component.form.getRawValue().userIds).toEqual(['helen']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated role including the disabled roleId', () => {
@@ -141,6 +148,6 @@ describe('AppRoleForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/app-roles']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });

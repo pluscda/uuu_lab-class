@@ -2,6 +2,9 @@
   <div class="page-toolbar">
     <div class="page-title">
       <h2>{{ isEdit() ? '編輯課程群組' : '新增課程群組' }}</h2>
+      @if (pkid() !== null) {
+        <app-row-audit-badge tableName="CourseGroup" [pkid]="pkid()!" />
+      }
     </div>
     <div class="toolbar-actions">
       <p-button

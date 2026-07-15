@@ -11,6 +11,13 @@ import { CourseGroup } from '../../../core/models/course-group.model';
 
 const baseUrl = `${environment.apiUrl}/course-groups`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const cloudGroup: CourseGroup = { pkid: 1, description: '雲端運算' };
 
 function setup(routeId: string | null): {
@@ -52,7 +59,7 @@ describe('CourseGroupForm (add mode)', () => {
 
     expect(component.isEdit()).toBeFalse();
     expect(component.form.controls.description.value).toBe('');
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -63,7 +70,7 @@ describe('CourseGroupForm (add mode)', () => {
 
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.description.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new group and navigate back to the list', () => {
@@ -80,7 +87,7 @@ describe('CourseGroupForm (add mode)', () => {
     req.flush({ pkid: 7 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/course-groups']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -94,7 +101,7 @@ describe('CourseGroupForm (edit mode)', () => {
     expect(component.isEdit()).toBeTrue();
     expect(component.form.controls.description.value).toBe('雲端運算');
     expect(component.form.controls.pkid.value).toBe(1);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated group with the pkid from the loaded record', () => {
@@ -114,6 +121,6 @@ describe('CourseGroupForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/course-groups']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });

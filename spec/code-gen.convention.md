@@ -128,3 +128,36 @@ ActivatedRoute stub:
 | `date` | C# `DateOnly` via `DateOnlyTypeHandler`; `p-datepicker` in form |
 | `smallint` PK | No special handling |
 | `nvarchar` PK (string) | Controller route `{id}` (no `:int`); service calls `encodeURIComponent(id)`; PK immutable on edit |
+
+## Cross-Cutting (apply to every feature)
+
+### Row Audit
+
+- Every repository MUST log to RowAudit on Insert / Update / Delete via the shared
+  `RowAuditWriter` service (`LogInsertAsync` / `LogUpdateAsync` / `LogDeleteAsync`) —
+  never insert into RowAudit directly.
+- Update: load the existing row first and log the **changed column names**.
+  Delete: load the row first so its first string column can be captured.
+- Audit writes go on the **same connection/transaction** as the data change —
+  a failed change must leave no audit row.
+- `ActionDesc`: Insert/Delete = the row's first string-type column value;
+  Update = comma-separated changed column names.
+  `PrimaryKeyValues` = pkid as a string. `UserName` = JWT user (fallback `"system"`).
+  Never insert `pkid` (IDENTITY).
+- Every detail page AND form page MUST place `<app-row-audit-badge>` (shared
+  `RowAuditBadgeComponent`; required inputs `tableName`, `pkid`) in the toolbar
+  `#start` slot — shows the latest change inline, click opens the full trail
+  (`GET /api/rowaudit?tableName=&pkid=`). Form pages: edit mode only (guard
+  `pkid !== null`, not truthiness — pkid 0 is valid).
+- Page specs must flush the badge's `/rowaudit` GET before `httpMock.verify()`.
+
+### Exception Handling
+
+- Unhandled errors are handled by the global `ExceptionHandlingMiddleware`:
+  full detail logged server-side, safe generic 500 `{ message }` returned —
+  never leak stack traces or SQL. Do NOT add per-controller try/catch for
+  unexpected errors. Keep 401/403/validation responses as they are.
+- Angular `authInterceptor` shows a friendly error toast for 500-class responses;
+  401 still clears the session and redirects to Login. Other statuses (400/403/409)
+  propagate untouched so pages can surface them on the form.
+- Specs exercising a 5xx flush through the interceptor must provide `MessageService`.

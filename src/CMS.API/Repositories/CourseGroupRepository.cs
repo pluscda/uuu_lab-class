@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class CourseGroupRepository(IDbConnectionFactory connectionFactory) : ICourseGroupRepository
+public class CourseGroupRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : ICourseGroupRepository
 {
+    private const string TableName = "CourseGroup";
+
     private const string SelectSql = """
         SELECT g.pkid, g.Description
         FROM CourseGroup g
@@ -44,29 +48,51 @@ public class CourseGroupRepository(IDbConnectionFactory connectionFactory) : ICo
     public async Task<short> CreateAsync(CourseGroupRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
-        return await connection.ExecuteScalarAsync<short>("""
+        var pkid = await connection.ExecuteScalarAsync<short>("""
             INSERT INTO CourseGroup (Description)
             VALUES (@Description);
             SELECT CAST(SCOPE_IDENTITY() AS smallint);
             """, request);
+
+        var created = await GetForAuditAsync(connection, pkid);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection);
+        return pkid;
     }
 
     public async Task<bool> UpdateAsync(CourseGroupRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        var before = await GetForAuditAsync(connection, request.Pkid);
         var affected = await connection.ExecuteAsync("""
             UPDATE CourseGroup
             SET Description = @Description
             WHERE pkid = @Pkid
             """, request);
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        var after = await GetForAuditAsync(connection, request.Pkid);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection);
+        return true;
     }
 
     public async Task<bool> DeleteAsync(short pkid)
     {
         using var connection = connectionFactory.CreateConnection();
+        var row = await GetForAuditAsync(connection, pkid);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM CourseGroup WHERE pkid = @Pkid", new { Pkid = pkid });
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        if (row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection);
+        return true;
     }
+
+    private static Task<CourseGroup?> GetForAuditAsync(IDbConnection connection, short pkid) =>
+        connection.QuerySingleOrDefaultAsync<CourseGroup>(
+            $"{SelectSql} WHERE g.pkid = @Pkid", new { Pkid = pkid });
 }

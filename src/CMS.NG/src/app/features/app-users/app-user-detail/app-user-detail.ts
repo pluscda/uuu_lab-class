@@ -9,10 +9,11 @@ import { AppRoleLookup, AppUser } from '../../../core/models/app-user.model';
 import { AppUserService } from '../../../core/services/app-user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LookupService } from '../../../core/services/lookup.service';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 @Component({
   selector: 'app-app-user-detail',
-  imports: [DatePipe, ButtonModule, TagModule],
+  imports: [DatePipe, ButtonModule, TagModule, RowAuditBadgeComponent],
   templateUrl: './app-user-detail.html',
   styleUrl: './app-user-detail.scss'
 })

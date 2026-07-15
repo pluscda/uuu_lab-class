@@ -11,6 +11,13 @@ import { PublishStatus } from '../../../core/models/publish-status.model';
 
 const baseUrl = `${environment.apiUrl}/publish-statuses`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const draftStatus: PublishStatus = {
   pkid: 1,
   description: '草稿',
@@ -61,7 +68,7 @@ describe('PublishStatusForm (add mode)', () => {
     expect(component.form.controls.isDraft.value).toBeFalse();
     expect(component.form.controls.isPublished.value).toBeFalse();
     expect(component.form.controls.isDiscontinued.value).toBeFalse();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -73,7 +80,7 @@ describe('PublishStatusForm (add mode)', () => {
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.pkid.touched).toBeTrue();
     expect(component.form.controls.description.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new status and navigate back to the list', () => {
@@ -95,7 +102,7 @@ describe('PublishStatusForm (add mode)', () => {
     req.flush({ pkid: 3 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/publish-statuses']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should show 主代碼已存在 on 409 conflict', () => {
@@ -114,7 +121,7 @@ describe('PublishStatusForm (add mode)', () => {
       jasmine.objectContaining({ severity: 'error', detail: '主代碼已存在' })
     );
     expect(component.saving()).toBeFalse();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -129,7 +136,7 @@ describe('PublishStatusForm (edit mode)', () => {
     expect(component.form.controls.pkid.disabled).toBeTrue();
     expect(component.form.controls.description.value).toBe('草稿');
     expect(component.form.controls.isDraft.value).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated status including the disabled pkid', () => {
@@ -149,6 +156,6 @@ describe('PublishStatusForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/publish-statuses']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });

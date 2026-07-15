@@ -80,6 +80,33 @@ Update this file when a module is completed or deferred work changes.
 - ⚠️ Validation failures return **400, never 401** — the Angular interceptor treats any 401 as session-expired and force-logs-out
 - Frontend: second card on `/profile` with its own `passwordForm` (`passwordComplexity` + group-level `passwordsMatch` validators, errors shown per-field); success toast + form reset; server 400 message surfaced via toast; `AuthService.changePassword()` leaves the stored profile/token untouched (session stays valid)
 
+✅ **Global exception handling** (cross-cutting) — `Middleware/ExceptionHandlingMiddleware.cs` + interceptor toast
+
+- Backend: `ExceptionHandlingMiddleware` registered FIRST in the pipeline (before Swagger/CORS/auth) catches any exception escaping controllers/repositories, logs it in full (`ILogger.LogError` — message + stack trace) and returns **500** with the one safe JSON body `{ "message": "An unexpected error occurred." }` (`ExceptionHandlingMiddleware.GenericMessage`) — never the exception type, stack trace, SQL text, or connection details. If the response already started it rethrows (can't rewrite headers)
+- Deliberate responses are untouched: 401/403 come from the auth middleware as status codes, 400 validation from `[ApiController]` model binding, 404/409 from controllers — none are exceptions, so they pass through unchanged (`ExceptionHandlingTests`, 4 tests: throwing repo → generic 500 with nothing sensitive in the body; 401/403/400 unchanged)
+- Frontend: `authInterceptor` now also toasts on **any 5xx** — `MessageService.add` with the body's safe `message` (fallback 系統發生錯誤，請稍後再試。), summary 系統錯誤; error still propagates to the caller. 401 logout/redirect and form-level 400/409 handling unchanged. ⚠️ Interceptor specs (and any spec exercising a 5xx flush through the interceptor) must provide `MessageService`
+
+✅ **RowAudit writer** (cross-cutting, backend only) — `Services/RowAuditWriter.cs`
+
+- `IRowAuditWriter` (Scoped, registered in Program.cs with `AddHttpContextAccessor`): generic `LogInsertAsync` / `LogUpdateAsync` / `LogDeleteAsync` insert ONE `RowAudit` row per call via Dapper — reflection-based, works for any entity
+- UserName from the JWT `userName` claim (fallback `Identity.Name`, then `"system"` when unauthenticated); PrimaryKeyValues = the entity's `pkid` (found by reflection, case-insensitive)
+- ActionDesc: Insert/Delete = value of the FIRST string property in declaration order; Update = `", "`-joined names of changed properties (strings + value types only — nav objects/ID lists excluded, they'd always diff by reference); no-op update writes NO row; truncated at 1000 chars
+- Dapper insert isolated in `protected virtual InsertAsync` so unit tests capture rows without a DB (`RowAuditWriterTests`, 7 tests)
+- **Wired into all 7 CRUD repositories** (AppRole, AppUser, PublishStatus, Partner, CourseGroup, Course, FeaturedPromoItem): Create → re-select the new row + `LogInsertAsync`; Update → select before, apply, select after, `LogUpdateAsync` (accurate changed-column list); Delete → select first, delete, `LogDeleteAsync` — always only after the change succeeded
+- Log methods take optional `IDbConnection`/`IDbTransaction` so the audit row shares the operation's connection/transaction — a rolled-back transactional change (AppRole/AppUser/Course/MoveSlot) leaves no audit row
+- Repos with pseudo-columns use a lean `AuditSelectSql` of real table columns only (no `UserCount`/`RoleCount` subqueries, no JOINed labels like `PartnerName`/`PromoCode`) so update diffs list only real columns; consequence: an update that only changes N-N links (role/user assignment, Course certifications/job categories) writes NO audit row (ID lists are excluded from the diff by design)
+- Also audited: `AppUserRepository.ResetPasswordAsync` (Update row, diff = `PasswordUpdatedTime` — hash never audited) and `FeaturedPromoItemRepository.MoveSlotAsync` (one Update row per moved item, incl. the swap occupant)
+- NOT audited (out of scope: not a CRUD repository): `AuthRepository` profile-UserName update and change-password
+- `PublishStatusRepositoryAuditTests` (7 tests) run the real repo + real writer against in-memory SQLite (shared-cache) proving Insert/Update/Delete audit rows, exact changed-column lists, and that failed/no-op changes write no row; test project gained `Microsoft.Data.Sqlite`
+
+✅ **RowAudit viewer** (cross-cutting) — `GET /api/rowaudit?tableName=X&pkid=N` + `RowAuditBadgeComponent`
+
+- Endpoint (`RowAuditController` → `IRowAuditRepository`): filters `TableName = @tableName AND PrimaryKeyValues = @pkid` (string compare — PrimaryKeyValues is nvarchar), newest first (`[DateTime] DESC, pkid DESC` tie-break); returns slim `RowAuditEntry` rows (DateTime, UserName, ActionType, ActionDesc — `COALESCE(ActionDesc,'')` since the column is nullable); 400 if either query param missing. Route is `/api/rowaudit` (singular — matches the table, not a CRUD entity)
+- `RowAuditRepositoryTests` run the real SQL on in-memory SQLite (filter, ordering, tie-break, null ActionDesc, empty); `RowAuditControllerTests` cover pass-through + 400s
+- Frontend: `shared/row-audit-badge/` `RowAuditBadgeComponent` (standalone; inputs `tableName`, `pkid`) + `RowAuditService`/`row-audit.model.ts`. Pill button "異動紀錄 History" shows the LATEST change inline ("Update by alice · 2026-06-04 14:30") or "尚無紀錄 No history"; click opens a p-dialog (appendTo body) with the full trail in a p-table (time/user/action-tag/desc) or a "尚無異動紀錄 No history yet" empty state; fetch errors degrade silently to the no-history state. DateTime is rendered WITHOUT appending 'Z' — RowAuditWriter stores local `DateTime.Now`, unlike the UTC fields
+- Placed in the `.page-toolbar` start (inside `.page-title`) of all 6 detail pages and all 6 form pages (edit mode only — create has no pkid; guard is `pkid() !== null` because PublishStatus pkid 0 is valid). String-PK forms (AppRole/AppUser) set the badge's int pkid from the loaded record, not the route id. FeaturedPromoItem board excluded (custom board, no detail/form pages)
+- ⚠️ Page specs: the badge's GET fires inside the pages' change detection, so every detail/form spec flushes `/rowaudit` before `httpMock.verify()` (detail specs in `afterEach`; form specs via a `flushAuditAndVerify` helper replacing inline `verify()` calls)
+
 ## Lookup APIs (`/api/lookups/...`)
 
 - app-users
@@ -101,7 +128,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 132 tests · Frontend: 206 tests — all passing
+- Backend: 160 tests · Frontend: 214 tests — all passing
 
 ## Not Yet Implemented
 

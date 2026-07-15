@@ -1,0 +1,47 @@
+<button type="button" class="audit-badge" (click)="openDialog()">
+  <i class="pi pi-history" aria-hidden="true"></i>
+  <span class="audit-badge-label">異動紀錄 History</span>
+  @if (latest(); as l) {
+    <span class="audit-badge-latest">
+      {{ l.actionType }} by {{ l.userName }} · {{ l.dateTime | date: 'yyyy-MM-dd HH:mm' }}
+    </span>
+  } @else if (loaded()) {
+    <span class="audit-badge-latest audit-badge-empty">尚無紀錄 No history</span>
+  }
+</button>
+
+<p-dialog
+  header="異動紀錄 History"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [style]="{ width: '760px', maxWidth: '95vw' }"
+  appendTo="body">
+  @if (entries().length > 0) {
+    <p-table [value]="entries()" [scrollable]="true" scrollHeight="60vh" styleClass="audit-table">
+      <ng-template #header>
+        <tr>
+          <th class="audit-col-time">異動時間 Time</th>
+          <th class="audit-col-user">使用者 User</th>
+          <th class="audit-col-action">動作 Action</th>
+          <th>異動內容 Description</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-entry>
+        <tr>
+          <td class="audit-col-time">{{ entry.dateTime | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+          <td class="audit-col-user">{{ entry.userName }}</td>
+          <td class="audit-col-action">
+            <p-tag [value]="entry.actionType" [severity]="actionSeverity(entry.actionType)" />
+          </td>
+          <td class="audit-desc">{{ entry.actionDesc }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  } @else {
+    <div class="audit-empty-state">
+      <i class="pi pi-history" aria-hidden="true"></i>
+      <p>尚無異動紀錄 No history yet</p>
+    </div>
+  }
+</p-dialog>

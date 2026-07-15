@@ -10,6 +10,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
 import { PublishStatusRequest } from '../../../core/models/publish-status.model';
 import { PublishStatusService } from '../../../core/services/publish-status.service';
+import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
 
 @Component({
   selector: 'app-publish-status-form',
@@ -18,7 +19,8 @@ import { PublishStatusService } from '../../../core/services/publish-status.serv
     ButtonModule,
     InputTextModule,
     InputNumberModule,
-    CheckboxModule
+    CheckboxModule,
+    RowAuditBadgeComponent
   ],
   templateUrl: './publish-status-form.html',
   styleUrl: './publish-status-form.scss'
@@ -32,6 +34,8 @@ export class PublishStatusForm implements OnInit {
 
   readonly isEdit = signal(false);
   readonly saving = signal(false);
+  // Set only in edit mode — the audit badge needs the existing record's pkid.
+  readonly pkid = signal<number | null>(null);
 
   readonly form = this.fb.group({
     pkid: this.fb.control<number | null>(null, [
@@ -50,6 +54,7 @@ export class PublishStatusForm implements OnInit {
     this.isEdit.set(!!id);
 
     if (id) {
+      this.pkid.set(Number(id));
       this.form.controls.pkid.disable();
       this.service.getById(Number(id)).subscribe({
         next: status => {

@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class PublishStatusRepository(IDbConnectionFactory connectionFactory) : IPublishStatusRepository
+public class PublishStatusRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IPublishStatusRepository
 {
+    private const string TableName = "PublishStatus";
+
     private const string SelectSql = """
         SELECT s.pkid, s.Description, s.IsDraft, s.IsPublished, s.IsDiscontinued
         FROM PublishStatus s
@@ -63,26 +67,43 @@ public class PublishStatusRepository(IDbConnectionFactory connectionFactory) : I
             INSERT INTO PublishStatus (pkid, Description, IsDraft, IsPublished, IsDiscontinued)
             VALUES (@Pkid, @Description, @IsDraft, @IsPublished, @IsDiscontinued)
             """, request);
+
+        var created = await GetForAuditAsync(connection, request.Pkid);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection);
     }
 
     public async Task<bool> UpdateAsync(PublishStatusRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        var before = await GetForAuditAsync(connection, request.Pkid);
         var affected = await connection.ExecuteAsync("""
             UPDATE PublishStatus
             SET Description = @Description, IsDraft = @IsDraft,
                 IsPublished = @IsPublished, IsDiscontinued = @IsDiscontinued
             WHERE pkid = @Pkid
             """, request);
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        var after = await GetForAuditAsync(connection, request.Pkid);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection);
+        return true;
     }
 
     public async Task<bool> DeleteAsync(byte pkid)
     {
         using var connection = connectionFactory.CreateConnection();
+        var row = await GetForAuditAsync(connection, pkid);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM PublishStatus WHERE pkid = @Pkid", new { Pkid = pkid });
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        if (row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection);
+        return true;
     }
 
     public async Task<bool> ExistsAsync(byte pkid)
@@ -92,4 +113,8 @@ public class PublishStatusRepository(IDbConnectionFactory connectionFactory) : I
             "SELECT COUNT(*) FROM PublishStatus WHERE pkid = @Pkid", new { Pkid = pkid });
         return count > 0;
     }
+
+    private static Task<PublishStatus?> GetForAuditAsync(IDbConnection connection, byte pkid) =>
+        connection.QuerySingleOrDefaultAsync<PublishStatus>(
+            $"{SelectSql} WHERE s.pkid = @Pkid", new { Pkid = pkid });
 }

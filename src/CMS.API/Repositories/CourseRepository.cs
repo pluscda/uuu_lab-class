@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseRepository
+public class CourseRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : ICourseRepository
 {
+    private const string TableName = "Course";
+
     private const string SelectSql = """
         SELECT c.pkid, c.Title, c.OfficialTitle, c.CourseId, c.ProdCourseId, c.FriendlyUrl,
                c.DisplayOrder, c.Partner_pkid AS PartnerPkid, c.CourseGroup_pkid AS CourseGroupPkid,
@@ -19,6 +23,17 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
         JOIN Partner p ON p.pkid = c.Partner_pkid
         LEFT JOIN CourseGroup g ON g.pkid = c.CourseGroup_pkid
         JOIN PublishStatus s ON s.pkid = c.PublishStatus_pkid
+        """;
+
+    // Real Course columns only — no JOINed label columns, so a changed FK reports
+    // just the FK column (e.g. PartnerPkid) and not the label pseudo-column too.
+    private const string AuditSelectSql = """
+        SELECT pkid, Title, OfficialTitle, CourseId, ProdCourseId, FriendlyUrl, DisplayOrder,
+               Partner_pkid AS PartnerPkid, CourseGroup_pkid AS CourseGroupPkid,
+               PublishStatus_pkid AS PublishStatusPkid, ScheduleOn, ScheduleOff, Hour,
+               ListPrice, LearningCredit, Material, Objective, Target, Prerequisites, Outline,
+               TowardCertOrExam, Note, OtherInfo, CanRepeat
+        FROM Course
         """;
 
     private const string InsertColumns = """
@@ -131,6 +146,10 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
 
         await InsertRelationsAsync(connection, transaction, pkid, request);
 
+        var created = await GetForAuditAsync(connection, transaction, pkid);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection, transaction);
+
         transaction.Commit();
         return pkid;
     }
@@ -140,6 +159,8 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
+
+        var before = await GetForAuditAsync(connection, transaction, request.Pkid);
 
         var affected = await connection.ExecuteAsync("""
             UPDATE Course
@@ -165,6 +186,10 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
         await DeleteRelationsAsync(connection, transaction, request.Pkid);
         await InsertRelationsAsync(connection, transaction, request.Pkid, request);
 
+        var after = await GetForAuditAsync(connection, transaction, request.Pkid);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection, transaction);
+
         transaction.Commit();
         return true;
     }
@@ -175,13 +200,23 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
+        var row = await GetForAuditAsync(connection, transaction, pkid);
+
         await DeleteRelationsAsync(connection, transaction, pkid);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM Course WHERE pkid = @Pkid", new { Pkid = pkid }, transaction);
 
+        if (affected > 0 && row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection, transaction);
+
         transaction.Commit();
         return affected > 0;
     }
+
+    private static Task<Course?> GetForAuditAsync(
+        IDbConnection connection, IDbTransaction transaction, int pkid) =>
+        connection.QuerySingleOrDefaultAsync<Course>(
+            $"{AuditSelectSql} WHERE pkid = @Pkid", new { Pkid = pkid }, transaction);
 
     private static async Task DeleteRelationsAsync(
         System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, int pkid)

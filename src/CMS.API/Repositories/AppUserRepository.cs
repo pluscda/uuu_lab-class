@@ -4,16 +4,26 @@ using System.Text;
 using System.Text.Json;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUserRepository
+public class AppUserRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IAppUserRepository
 {
+    private const string TableName = "AppUser";
+
     // PasswordHash is backend-only and never selected
     private const string SelectSql = """
         SELECT u.pkid, u.UserId, u.UserName, u.IsActive, u.PasswordUpdatedTime,
                (SELECT COUNT(*) FROM AppUserRole ur WHERE ur.UserId = u.UserId) AS RoleCount
+        FROM AppUser u
+        """;
+
+    // Real AppUser columns only (still never PasswordHash) — no RoleCount subquery,
+    // so the update diff never reports a pseudo-column when only roles changed.
+    private const string AuditSelectSql = """
+        SELECT u.pkid, u.UserId, u.UserName, u.IsActive, u.PasswordUpdatedTime
         FROM AppUser u
         """;
 
@@ -88,6 +98,10 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
 
         await InsertUserRolesAsync(connection, transaction, request);
 
+        var created = await GetForAuditAsync(connection, transaction, request.UserId);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection, transaction);
+
         transaction.Commit();
         return pkid;
     }
@@ -97,6 +111,8 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
+
+        var before = await GetForAuditAsync(connection, transaction, request.UserId);
 
         // PasswordHash / PasswordUpdatedTime are never touched here
         var affected = await connection.ExecuteAsync("""
@@ -117,6 +133,10 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
             new { request.UserId }, transaction);
         await InsertUserRolesAsync(connection, transaction, request);
 
+        var after = await GetForAuditAsync(connection, transaction, request.UserId);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection, transaction);
+
         transaction.Commit();
         return true;
     }
@@ -127,12 +147,17 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
+        var row = await GetForAuditAsync(connection, transaction, userId);
+
         await connection.ExecuteAsync(
             "DELETE FROM AppUserRole WHERE UserId = @UserId",
             new { UserId = userId }, transaction);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM AppUser WHERE UserId = @UserId",
             new { UserId = userId }, transaction);
+
+        if (affected > 0 && row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection, transaction);
 
         transaction.Commit();
         return affected > 0;
@@ -155,12 +180,20 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
     public async Task<bool> ResetPasswordAsync(string userId, string passwordHash)
     {
         using var connection = connectionFactory.CreateConnection();
+        var before = await GetForAuditAsync(connection, transaction: null, userId);
         var affected = await connection.ExecuteAsync("""
             UPDATE AppUser
             SET PasswordHash = @PasswordHash, PasswordUpdatedTime = GETUTCDATE()
             WHERE UserId = @UserId
             """, new { UserId = userId, PasswordHash = passwordHash });
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        // Diff surfaces as "PasswordUpdatedTime" — the hash itself never enters the audit
+        var after = await GetForAuditAsync(connection, transaction: null, userId);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection);
+        return true;
     }
 
     // Default password comes from SysConfig 'appConfig' (JSON: { "defaultPassword": "..." })
@@ -179,6 +212,11 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
 
         return defaultPassword.GetString()!;
     }
+
+    private static Task<AppUser?> GetForAuditAsync(
+        IDbConnection connection, IDbTransaction? transaction, string userId) =>
+        connection.QuerySingleOrDefaultAsync<AppUser>(
+            $"{AuditSelectSql} WHERE u.UserId = @UserId", new { UserId = userId }, transaction);
 
     // Login hash convention: SHA-256 of the UTF-8 bytes, uppercase hex
     private static string Sha256Hex(string value) =>

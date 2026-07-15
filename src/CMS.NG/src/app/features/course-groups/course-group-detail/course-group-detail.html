@@ -3,6 +3,7 @@
     <h2>檢視課程群組</h2>
     @if (group(); as g) {
       <span class="subtitle">{{ g.description }}</span>
+      <app-row-audit-badge tableName="CourseGroup" [pkid]="g.pkid" />
     }
   </div>
   <div class="toolbar-actions">

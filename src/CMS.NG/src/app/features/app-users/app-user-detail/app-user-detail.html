@@ -3,6 +3,7 @@
     <h2>檢視使用者</h2>
     @if (user(); as u) {
       <span class="subtitle">{{ u.userId }}</span>
+      <app-row-audit-badge tableName="AppUser" [pkid]="u.pkid" />
     }
   </div>
   <div class="toolbar-actions">

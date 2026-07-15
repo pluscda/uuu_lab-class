@@ -2,6 +2,9 @@
   <div class="page-toolbar">
     <div class="page-title">
       <h2>{{ isEdit() ? '編輯使用者' : '新增使用者' }}</h2>
+      @if (pkid() !== null) {
+        <app-row-audit-badge tableName="AppUser" [pkid]="pkid()!" />
+      }
     </div>
     <div class="toolbar-actions">
       @if (isEdit() && auth.isAdmin()) {

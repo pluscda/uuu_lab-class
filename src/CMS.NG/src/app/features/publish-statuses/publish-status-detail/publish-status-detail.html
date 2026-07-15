@@ -3,6 +3,7 @@
     <h2>檢視發布狀態</h2>
     @if (status(); as s) {
       <span class="subtitle">{{ s.description }}</span>
+      <app-row-audit-badge tableName="PublishStatus" [pkid]="s.pkid" />
     }
   </div>
   <div class="toolbar-actions">

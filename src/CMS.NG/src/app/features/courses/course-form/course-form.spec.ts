@@ -12,6 +12,13 @@ import { Course } from '../../../core/models/course.model';
 const baseUrl = `${environment.apiUrl}/courses`;
 const lookupsUrl = `${environment.apiUrl}/lookups`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const azureCourse: Course = {
   pkid: 1,
   title: 'Azure 基礎課程',
@@ -110,7 +117,7 @@ describe('CourseForm (add mode)', () => {
     expect(component.isEdit()).toBeFalse();
     expect(component.partnerOptions().length).toBe(1);
     expect(component.certificationOptions()[0].label).toBe('Azure Fundamentals');
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should render a sticky (pinned) action toolbar with Save and Cancel', () => {
@@ -120,7 +127,7 @@ describe('CourseForm (add mode)', () => {
     fixture.detectChanges();
 
     expectStickyToolbar(fixture);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -133,7 +140,7 @@ describe('CourseForm (add mode)', () => {
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.title.touched).toBeTrue();
     expect(component.form.controls.partnerPkid.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should auto-default scheduleOff to scheduleOn + 10 years', () => {
@@ -144,7 +151,7 @@ describe('CourseForm (add mode)', () => {
     component.form.controls.scheduleOn.setValue(new Date(2026, 6, 15));
 
     expect(component.form.controls.scheduleOff.value).toEqual(new Date(2036, 6, 15));
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new course with ISO dates and relation lists', () => {
@@ -175,7 +182,7 @@ describe('CourseForm (add mode)', () => {
     req.flush({ pkid: 7 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/courses']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -192,7 +199,7 @@ describe('CourseForm (edit mode)', () => {
     expect(component.form.controls.scheduleOn.value).toEqual(new Date(2026, 0, 1));
     expect(component.form.controls.scheduleOff.value).toEqual(new Date(2036, 0, 1));
     expect(component.form.controls.certificationPkids.value).toEqual([10]);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should render a sticky (pinned) action toolbar with Save and Cancel', () => {
@@ -204,7 +211,7 @@ describe('CourseForm (edit mode)', () => {
     fixture.detectChanges();
 
     expectStickyToolbar(fixture);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated course with converted dates', () => {
@@ -227,6 +234,6 @@ describe('CourseForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/courses']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });

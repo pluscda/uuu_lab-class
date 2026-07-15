@@ -3,6 +3,7 @@
     <h2>檢視合作廠商</h2>
     @if (partner(); as p) {
       <span class="subtitle">{{ p.name }}</span>
+      <app-row-audit-badge tableName="Partner" [pkid]="p.pkid" />
     }
   </div>
   <div class="toolbar-actions">

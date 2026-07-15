@@ -1,6 +1,8 @@
 using System.Text;
 using CMS.API.Data;
+using CMS.API.Middleware;
 using CMS.API.Repositories;
+using CMS.API.Services;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +62,9 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod());
 });
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddScoped<IRowAuditWriter, RowAuditWriter>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAppRoleRepository, AppRoleRepository>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
@@ -70,8 +74,13 @@ builder.Services.AddScoped<ICourseGroupRepository, CourseGroupRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IFeaturedPromoItemRepository, FeaturedPromoItemRepository>();
 builder.Services.AddScoped<ILookupRepository, LookupRepository>();
+builder.Services.AddScoped<IRowAuditRepository, RowAuditRepository>();
 
 var app = builder.Build();
+
+// First middleware in the pipeline: any unhandled exception from anything
+// downstream becomes a logged, generic 500 JSON response.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI();

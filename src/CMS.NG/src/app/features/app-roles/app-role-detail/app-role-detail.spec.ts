@@ -44,7 +44,11 @@ describe('AppRoleDetail', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // The toolbar RowAuditBadge fetches the record's audit trail once loaded.
+    httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+    httpMock.verify();
+  });
 
   it('should load the role and resolve user labels', () => {
     const fixture = TestBed.createComponent(AppRoleDetail);

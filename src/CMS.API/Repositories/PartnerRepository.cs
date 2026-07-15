@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class PartnerRepository(IDbConnectionFactory connectionFactory) : IPartnerRepository
+public class PartnerRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IPartnerRepository
 {
+    private const string TableName = "Partner";
+
     private const string SelectSql = """
         SELECT p.pkid, p.Name, p.AppKey, p.NameOnPartnerMenu, p.NameOnCourseDetailPage,
                p.DisplayOrder, p.ImageFilename
@@ -48,16 +52,22 @@ public class PartnerRepository(IDbConnectionFactory connectionFactory) : IPartne
     public async Task<short> CreateAsync(PartnerRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
-        return await connection.ExecuteScalarAsync<short>("""
+        var pkid = await connection.ExecuteScalarAsync<short>("""
             INSERT INTO Partner (Name, AppKey, NameOnPartnerMenu, NameOnCourseDetailPage, DisplayOrder, ImageFilename)
             VALUES (@Name, @AppKey, @NameOnPartnerMenu, @NameOnCourseDetailPage, @DisplayOrder, @ImageFilename);
             SELECT CAST(SCOPE_IDENTITY() AS smallint);
             """, request);
+
+        var created = await GetForAuditAsync(connection, pkid);
+        if (created is not null)
+            await auditWriter.LogInsertAsync(TableName, created, connection);
+        return pkid;
     }
 
     public async Task<bool> UpdateAsync(PartnerRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        var before = await GetForAuditAsync(connection, request.Pkid);
         var affected = await connection.ExecuteAsync("""
             UPDATE Partner
             SET Name = @Name, AppKey = @AppKey, NameOnPartnerMenu = @NameOnPartnerMenu,
@@ -65,14 +75,30 @@ public class PartnerRepository(IDbConnectionFactory connectionFactory) : IPartne
                 ImageFilename = @ImageFilename
             WHERE pkid = @Pkid
             """, request);
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        var after = await GetForAuditAsync(connection, request.Pkid);
+        if (before is not null && after is not null)
+            await auditWriter.LogUpdateAsync(TableName, before, after, connection);
+        return true;
     }
 
     public async Task<bool> DeleteAsync(short pkid)
     {
         using var connection = connectionFactory.CreateConnection();
+        var row = await GetForAuditAsync(connection, pkid);
         var affected = await connection.ExecuteAsync(
             "DELETE FROM Partner WHERE pkid = @Pkid", new { Pkid = pkid });
-        return affected > 0;
+        if (affected == 0)
+            return false;
+
+        if (row is not null)
+            await auditWriter.LogDeleteAsync(TableName, row, connection);
+        return true;
     }
+
+    private static Task<Partner?> GetForAuditAsync(IDbConnection connection, short pkid) =>
+        connection.QuerySingleOrDefaultAsync<Partner>(
+            $"{SelectSql} WHERE p.pkid = @Pkid", new { Pkid = pkid });
 }

@@ -46,6 +46,8 @@ describe('AppUserDetail', () => {
   });
 
   afterEach(() => {
+    // The toolbar RowAuditBadge fetches the record's audit trail once loaded.
+    httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
     httpMock.verify();
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
   });

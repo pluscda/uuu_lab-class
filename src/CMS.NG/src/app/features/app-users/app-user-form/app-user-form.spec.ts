@@ -13,6 +13,13 @@ import { AUTH_STORAGE_KEY } from '../../../core/services/auth.service';
 const baseUrl = `${environment.apiUrl}/app-users`;
 const rolesUrl = `${environment.apiUrl}/lookups/app-roles`;
 
+// In edit mode the toolbar RowAuditBadge fetches the record's audit trail;
+// flush it (when present) so verify() only guards the form's own requests.
+function flushAuditAndVerify(httpMock: HttpTestingController): void {
+  httpMock.match(req => req.url === `${environment.apiUrl}/rowaudit`).forEach(req => req.flush([]));
+  httpMock.verify();
+}
+
 const roles = [
   { roleId: 'Admin', roleName: 'Administrator' },
   { roleId: 'User', roleName: 'General User' }
@@ -86,7 +93,7 @@ describe('AppUserForm (add mode)', () => {
     expect(component.form.controls.isActive.value).toBeTrue();
     expect('password' in component.form.controls).toBeFalse();
     expect('passwordHash' in component.form.controls).toBeFalse();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should not submit when the form is invalid', () => {
@@ -99,7 +106,7 @@ describe('AppUserForm (add mode)', () => {
     httpMock.expectNone(baseUrl);
     expect(component.form.controls.userId.touched).toBeTrue();
     expect(component.form.controls.userName.touched).toBeTrue();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST a new user without any password field and navigate back to the list', () => {
@@ -123,7 +130,7 @@ describe('AppUserForm (add mode)', () => {
     req.flush({ pkid: 3 });
 
     expect(navigateSpy).toHaveBeenCalledWith(['/app-users']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -139,7 +146,7 @@ describe('AppUserForm (edit mode)', () => {
     expect(component.form.controls.userId.disabled).toBeTrue();
     expect(component.form.controls.userName.value).toBe('Helen Chen');
     expect(component.form.getRawValue().roleIds).toEqual(['Admin']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should PUT the updated user including the disabled userId', () => {
@@ -161,7 +168,7 @@ describe('AppUserForm (edit mode)', () => {
     req.flush(null);
 
     expect(navigateSpy).toHaveBeenCalledWith(['/app-users']);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
 
@@ -188,21 +195,21 @@ describe('AppUserForm (reset password to default)', () => {
     const { fixture, httpMock } = setupEdit(['Admin']);
 
     expect(resetButton(fixture)).not.toBeNull();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should hide the reset button when the signed-in user is not an Admin', () => {
     const { fixture, httpMock } = setupEdit(['User']);
 
     expect(resetButton(fixture)).toBeNull();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should hide the reset button in add mode even for an Admin', () => {
     const { fixture, httpMock } = setupEdit(['Admin'], null);
 
     expect(resetButton(fixture)).toBeNull();
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 
   it('should POST only the UserId to reset-password after the confirm is accepted', () => {
@@ -220,6 +227,6 @@ describe('AppUserForm (reset password to default)', () => {
     // Only the UserId (in the URL) — no password or hash is ever sent
     expect(req.request.body).toBeNull();
     req.flush(null);
-    httpMock.verify();
+    flushAuditAndVerify(httpMock);
   });
 });
