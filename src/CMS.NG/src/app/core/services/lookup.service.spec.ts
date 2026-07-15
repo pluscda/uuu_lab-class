@@ -89,4 +89,46 @@ describe('LookupService', () => {
     expect(req.request.method).toBe('GET');
     req.flush(courses);
   });
+
+  it('getTrainingCenters should GET the training-centers lookup', () => {
+    const centers = [
+      { pkid: 1, name: '台北' },
+      { pkid: 2, name: '新竹' }
+    ];
+    service.getTrainingCenters().subscribe(result => expect(result).toEqual(centers));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/lookups/training-centers`);
+    expect(req.request.method).toBe('GET');
+    req.flush(centers);
+  });
+
+  it('getPromotions should GET the promotions lookup with the keyword param', () => {
+    const promotions = [
+      {
+        pkid: 10,
+        promoCode: '20251204_SkillTrainAI',
+        topic: '成為能AI協作的程式設計師',
+        description: '轉職就業養成班'
+      }
+    ];
+    service.getPromotions('20251204').subscribe(result => expect(result).toEqual(promotions));
+
+    const req = httpMock.expectOne(
+      r =>
+        r.url === `${environment.apiUrl}/lookups/promotions` &&
+        r.params.get('keyword') === '20251204'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(promotions);
+  });
+
+  it('getPromotions without keyword should GET the promotions lookup with no params', () => {
+    service.getPromotions().subscribe(result => expect(result).toEqual([]));
+
+    const req = httpMock.expectOne(
+      r => r.url === `${environment.apiUrl}/lookups/promotions` && r.params.keys().length === 0
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
 });

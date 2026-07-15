@@ -15,3 +15,12 @@ export function parseIso(s: string): Date {
 export function addYears(d: Date, years: number): Date {
   return new Date(d.getFullYear() + years, d.getMonth(), d.getDate());
 }
+
+export function addDays(d: Date, days: number): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
+}
+
+// Monday of the week containing d (getDay(): Sunday = 0)
+export function startOfWeek(d: Date): Date {
+  return addDays(d, -((d.getDay() + 6) % 7));
+}

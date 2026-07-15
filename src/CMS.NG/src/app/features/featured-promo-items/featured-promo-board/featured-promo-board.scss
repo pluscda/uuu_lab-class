@@ -1,0 +1,103 @@
+.w-full {
+  width: 100%;
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+
+  .week-label {
+    font-weight: 600;
+    color: #0f172a;
+    min-width: 9rem;
+    text-align: center;
+  }
+}
+
+.day-header {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 0.75rem;
+}
+
+.day-slots {
+  padding: 0.25rem 0;
+}
+
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.25rem;
+
+  &.slot-empty .slot-cell {
+    background: #f8fafc;
+  }
+}
+
+.slot-no {
+  width: 1.25rem;
+  text-align: center;
+  color: #64748b;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.slot-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  ::ng-deep .p-button {
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+.slot-cell {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  min-height: 2.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slot-promo-code {
+  flex: 0 0 16rem;
+}
+
+.slot-topic {
+  flex: 0 0 20rem;
+}
+
+.slot-description {
+  flex: 1;
+}
+
+.slot-edit {
+  display: flex;
+  gap: 0.5rem;
+  border: 2px solid #0f172a;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.4rem 0.25rem;
+  background: #ffffff;
+
+  .slot-edit-fields {
+    flex: 1;
+    max-width: 48rem;
+  }
+
+  .slot-edit-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+}

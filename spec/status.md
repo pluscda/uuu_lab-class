@@ -34,6 +34,16 @@ Update this file when a module is completed or deferred work changes.
 - ScheduleOff auto-defaults to ScheduleOn + 10 years in the form
 - Excluded for now: copy endpoint, QR code, print-PDF, child sub-panels
 
+✅ **FeaturedPromoItem** custom weekly board (`promotion`) — spec: `spec/custom/FeaturedPromoItem/FeaturedPromoItem.spec.md`
+
+- Single custom page (`/featured-promo-items`, `FeaturedPromoBoard`) — no detail/form routes; inline Edit/New form per slot
+- Board: TrainingCenter tabs (`p-tabs`) × one-week Mon–Sun sections × 3 slots/day; week nav shifts the ScheduleOn range by 7 days
+- Unique key `(ScheduleOn, TrainingCenter_pkid, Slot)` — POST → 409 when the slot is taken
+- `POST /api/featured-promo-items/{id}/move` body `{ direction: ±1 }` — swaps with the target slot's occupant transactionally (temp Slot 0 dodges the unique index)
+- PromoCode resolved via `p-autocomplete` against `/api/lookups/promotions?keyword=`; picking a suggestion pre-fills Topic/Description; a typed-only code is resolved (exact match) on save
+- Copy/Paste is client-side clipboard state: Paste opens the New form pre-filled
+- `date.util.ts` gained `addDays` / `startOfWeek` (Monday-based)
+
 ## Lookup APIs (`/api/lookups/...`)
 
 - app-users
@@ -44,15 +54,18 @@ Update this file when a module is completed or deferred work changes.
 - certifications (RTRIM on nchar Title)
 - job-categories
 - courses
+- training-centers
+- promotions (optional `?keyword=` LIKE-filter on PromoCode)
 
 ## Sidebar Groups
 
+- 首頁 Home: FeaturedPromoItem (上稿作業)
 - 系統管理 Admin: AppUser, AppRole, PublishStatus
 - 課程管理 Course: Course, Partner, CourseGroup
 
 ## Testing
 
-- Backend: 67 tests · Frontend: 123 tests — all passing
+- Backend: 83 tests · Frontend: 150 tests — all passing
 
 ## Not Yet Implemented
 
@@ -61,7 +74,7 @@ Remaining modules
 - SysConfig (`admin`)
 - Certification, JobCategory, LinkDefinition, TrainingCenter (`course`)
 - Child tables: CourseFAQ, CourseRelatedLink, CourseRecomm, HotCourse, PartnerCourseGroup (`course`)
-- All entities under `promotion`
+- Remaining `promotion` entities: Promotion2, Seminar (FeaturedPromoItem done)
 
 Deferred Course features
 

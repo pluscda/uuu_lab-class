@@ -51,4 +51,4 @@ Details and examples in `spec/code-gen.convention.md` — the rules below are th
 
 ## Status Summary
 
-Completed CRUD: AppUser, AppRole (`auth`) · PublishStatus (`admin`) · Partner, CourseGroup, Course (`course`). All tests passing (backend 67, frontend 123). Full detail and remaining modules: `spec/status.md`.
+Completed CRUD: AppUser, AppRole (`auth`) · PublishStatus (`admin`) · Partner, CourseGroup, Course (`course`) · FeaturedPromoItem custom weekly board (`promotion`). All tests passing (backend 83, frontend 150). Full detail and remaining modules: `spec/status.md`.

@@ -62,4 +62,21 @@ public class LookupRepository(IDbConnectionFactory connectionFactory) : ILookupR
         return await connection.QueryAsync<CourseLookup>(
             "SELECT pkid, CourseId, Title FROM Course ORDER BY CourseId ASC");
     }
+
+    public async Task<IEnumerable<TrainingCenterLookup>> GetTrainingCentersAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<TrainingCenterLookup>(
+            "SELECT pkid, Name FROM TrainingCenter ORDER BY DisplayOrder ASC");
+    }
+
+    public async Task<IEnumerable<PromotionLookup>> GetPromotionsAsync(string? keyword)
+    {
+        var where = string.IsNullOrWhiteSpace(keyword) ? string.Empty : " WHERE PromoCode LIKE @Keyword";
+
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PromotionLookup>(
+            $"SELECT pkid, PromoCode, Topic, Description FROM Promotion2{where} ORDER BY PromoCode ASC",
+            new { Keyword = $"%{keyword?.Trim()}%" });
+    }
 }

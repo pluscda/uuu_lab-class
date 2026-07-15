@@ -1,0 +1,155 @@
+<div class="page-card">
+  <div class="page-toolbar">
+    <div class="page-title">
+      <h2>上稿作業 FeaturedPromoItem</h2>
+      <span class="subtitle">首頁精選促銷每週上稿，每日三個版位</span>
+    </div>
+  </div>
+
+  <p-tabs [value]="selectedCenter() ?? ''" (valueChange)="selectCenter($event)">
+    <p-tablist>
+      @for (center of trainingCenters(); track center.pkid) {
+        <p-tab [value]="center.pkid">{{ center.name }}</p-tab>
+      }
+    </p-tablist>
+  </p-tabs>
+
+  <div class="week-nav">
+    <p-button
+      icon="pi pi-angle-double-left"
+      label="上一週"
+      [text]="true"
+      size="small"
+      (onClick)="prevWeek()"
+    />
+    <span class="week-label">{{ weekLabel() }}</span>
+    <p-button
+      icon="pi pi-angle-double-right"
+      iconPos="right"
+      label="下一週"
+      [text]="true"
+      size="small"
+      (onClick)="nextWeek()"
+    />
+  </div>
+
+  @for (day of days(); track day.iso) {
+    <div class="day-header">{{ day.label }}</div>
+    <div class="day-slots">
+      @for (slot of slots; track slot) {
+        @let item = itemAt(day.iso, slot);
+        @if (editingKey() === day.iso + '|' + slot) {
+          <form [formGroup]="form" (ngSubmit)="save()" class="slot-edit">
+            <span class="slot-no">{{ slot }}</span>
+            <div class="slot-edit-fields">
+              <div class="field">
+                <label class="field-label" for="promo">
+                  PromoCode <span class="required">*</span>
+                </label>
+                <p-autocomplete
+                  inputId="promo"
+                  formControlName="promo"
+                  [suggestions]="promoSuggestions()"
+                  (completeMethod)="searchPromo($event)"
+                  (onSelect)="onPromoSelect($event)"
+                  optionLabel="promoCode"
+                  appendTo="body"
+                  [minLength]="1"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                @if (form.controls.promo.touched && form.controls.promo.hasError('required')) {
+                  <div class="field-error">PromoCode 為必填</div>
+                }
+              </div>
+              <div class="field">
+                <label class="field-label" for="topic">Topic <span class="required">*</span></label>
+                <input pInputText id="topic" formControlName="topic" maxlength="100" class="w-full" />
+                @if (form.controls.topic.touched && form.controls.topic.hasError('required')) {
+                  <div class="field-error">Topic 為必填</div>
+                }
+              </div>
+              <div class="field">
+                <label class="field-label" for="description">
+                  Description <span class="required">*</span>
+                </label>
+                <input
+                  pInputText
+                  id="description"
+                  formControlName="description"
+                  maxlength="300"
+                  class="w-full"
+                />
+                @if (
+                  form.controls.description.touched && form.controls.description.hasError('required')
+                ) {
+                  <div class="field-error">Description 為必填</div>
+                }
+              </div>
+              <div class="slot-edit-actions">
+                <p-button label="Save" type="submit" size="small" [loading]="saving()" />
+                <p-button
+                  label="Cancel"
+                  type="button"
+                  size="small"
+                  severity="secondary"
+                  [outlined]="true"
+                  (onClick)="cancelEdit()"
+                />
+              </div>
+            </div>
+          </form>
+        } @else {
+          <div class="slot-row" [class.slot-empty]="!item">
+            <span class="slot-no">{{ slot }}</span>
+            <span class="slot-actions">
+              <p-button
+                icon="pi pi-plus"
+                [text]="true"
+                size="small"
+                title="下移 (+)"
+                [disabled]="!item || slot === 3"
+                (onClick)="move(item!, 1)"
+              />
+              <p-button
+                icon="pi pi-minus"
+                [text]="true"
+                size="small"
+                title="上移 (-)"
+                [disabled]="!item || slot === 1"
+                (onClick)="move(item!, -1)"
+              />
+              <p-button
+                label="Edit"
+                [text]="true"
+                size="small"
+                (onClick)="startEdit(day.iso, slot)"
+              />
+              @if (item) {
+                <p-button label="Copy" [text]="true" size="small" (onClick)="copy(item)" />
+                <p-button
+                  label="Delete"
+                  [text]="true"
+                  size="small"
+                  severity="danger"
+                  (onClick)="confirmDelete(item)"
+                />
+              } @else {
+                <p-button
+                  label="Paste"
+                  [text]="true"
+                  size="small"
+                  [disabled]="!clipboard()"
+                  (onClick)="paste(day.iso, slot)"
+                />
+              }
+            </span>
+            <span class="slot-cell slot-promo-code">{{ item?.promoCode }}</span>
+            <span class="slot-cell slot-topic">{{ item?.topic }}</span>
+            <span class="slot-cell slot-description">{{ item?.description }}</span>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

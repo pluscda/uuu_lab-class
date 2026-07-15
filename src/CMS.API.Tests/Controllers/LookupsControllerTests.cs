@@ -154,4 +154,65 @@ public class LookupsControllerTests
         var value = Assert.IsAssignableFrom<IEnumerable<CourseLookup>>(ok.Value);
         Assert.Equal(2, value.Count());
     }
+
+    [Fact]
+    public async Task GetTrainingCenters_ReturnsOkWithTrainingCenters()
+    {
+        var centers = new[]
+        {
+            new TrainingCenterLookup { Pkid = 1, Name = "台北" },
+            new TrainingCenterLookup { Pkid = 2, Name = "新竹" },
+            new TrainingCenterLookup { Pkid = 3, Name = "台中" }
+        };
+        _repository.Setup(r => r.GetTrainingCentersAsync()).ReturnsAsync(centers);
+        var controller = new LookupsController(_repository.Object);
+
+        var result = await controller.GetTrainingCenters();
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var value = Assert.IsAssignableFrom<IEnumerable<TrainingCenterLookup>>(ok.Value);
+        Assert.Equal(3, value.Count());
+    }
+
+    [Fact]
+    public async Task GetPromotions_WithKeyword_PassesKeywordToRepository()
+    {
+        var promotions = new[]
+        {
+            new PromotionLookup
+            {
+                Pkid = 10,
+                PromoCode = "20251204_SkillTrainAI",
+                Topic = "成為能AI協作的程式設計師",
+                Description = "轉職就業養成班，三大主流語言任你選"
+            }
+        };
+        _repository.Setup(r => r.GetPromotionsAsync("20251204")).ReturnsAsync(promotions);
+        var controller = new LookupsController(_repository.Object);
+
+        var result = await controller.GetPromotions("20251204");
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var value = Assert.IsAssignableFrom<IEnumerable<PromotionLookup>>(ok.Value);
+        Assert.Equal("20251204_SkillTrainAI", value.Single().PromoCode);
+        _repository.Verify(r => r.GetPromotionsAsync("20251204"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPromotions_WithoutKeyword_ReturnsAllPromotions()
+    {
+        var promotions = new[]
+        {
+            new PromotionLookup { Pkid = 10, PromoCode = "20251204_SkillTrainAI" },
+            new PromotionLookup { Pkid = 11, PromoCode = "251211_GoogleAI" }
+        };
+        _repository.Setup(r => r.GetPromotionsAsync(null)).ReturnsAsync(promotions);
+        var controller = new LookupsController(_repository.Object);
+
+        var result = await controller.GetPromotions(null);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var value = Assert.IsAssignableFrom<IEnumerable<PromotionLookup>>(ok.Value);
+        Assert.Equal(2, value.Count());
+    }
 }

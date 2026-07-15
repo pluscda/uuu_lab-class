@@ -12,4 +12,6 @@ public interface ILookupRepository
     Task<IEnumerable<CertificationLookup>> GetCertificationsAsync();
     Task<IEnumerable<JobCategoryLookup>> GetJobCategoriesAsync();
     Task<IEnumerable<CourseLookup>> GetCoursesAsync();
+    Task<IEnumerable<TrainingCenterLookup>> GetTrainingCentersAsync();
+    Task<IEnumerable<PromotionLookup>> GetPromotionsAsync(string? keyword);
 }

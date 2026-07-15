@@ -12,6 +12,10 @@ import {
   CourseLookup,
   JobCategoryLookup
 } from '../models/course.model';
+import {
+  PromotionLookup,
+  TrainingCenterLookup
+} from '../models/featured-promo-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class LookupService {
@@ -47,5 +51,15 @@ export class LookupService {
 
   getCourses(): Observable<CourseLookup[]> {
     return this.http.get<CourseLookup[]>(`${environment.apiUrl}/lookups/courses`);
+  }
+
+  getTrainingCenters(): Observable<TrainingCenterLookup[]> {
+    return this.http.get<TrainingCenterLookup[]>(`${environment.apiUrl}/lookups/training-centers`);
+  }
+
+  getPromotions(keyword?: string): Observable<PromotionLookup[]> {
+    return this.http.get<PromotionLookup[]>(`${environment.apiUrl}/lookups/promotions`, {
+      params: keyword ? { keyword } : {}
+    });
   }
 }
