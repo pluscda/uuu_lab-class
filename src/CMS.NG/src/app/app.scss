@@ -72,6 +72,51 @@ $sidebar-collapsed-width: 64px;
   &.collapsed .brand {
     visibility: hidden;
   }
+
+  /* Signed-in user + logout on the right edge */
+  .topbar-user {
+    margin-left: auto;
+    padding-right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #334155;
+    font-size: 0.925rem;
+
+    > .pi-user {
+      color: #2563eb;
+      background: #eff6ff;
+      border-radius: 50%;
+      padding: 0.45rem;
+      font-size: 0.85rem;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .logout-button {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-left: 0.5rem;
+      padding: 0.45rem 0.8rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #475569;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
+      &:hover {
+        color: #b91c1c;
+        border-color: #fecaca;
+        background: #fef2f2;
+      }
+    }
+  }
 }
 
 .layout {

@@ -1,0 +1,48 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-brand">CMS</div>
+    <h2 class="login-title">登入</h2>
+    <p class="login-subtitle">請輸入帳號與密碼以繼續</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label class="field-label" for="userId">帳號 UserId<span class="required">*</span></label>
+        <input
+          pInputText
+          id="userId"
+          class="w-full"
+          formControlName="userId"
+          placeholder="請輸入帳號"
+          autocomplete="username" />
+        @if (form.controls.userId.touched && form.controls.userId.hasError('required')) {
+          <div class="field-error">帳號為必填</div>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">密碼 Password<span class="required">*</span></label>
+        <p-password
+          inputId="password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          placeholder="請輸入密碼"
+          autocomplete="current-password"
+          styleClass="w-full"
+          inputStyleClass="w-full" />
+        @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+          <div class="field-error">密碼為必填</div>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="login-error">
+          <i class="pi pi-exclamation-circle"></i>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <p-button label="登入" type="submit" styleClass="w-full login-submit" [loading]="loading()" />
+    </form>
+  </div>
+</div>

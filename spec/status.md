@@ -46,6 +46,25 @@ Update this file when a module is completed or deferred work changes.
 - Copy/Paste is client-side clipboard state: Paste opens the New form pre-filled
 - `date.util.ts` gained `addDays` / `startOfWeek` (Monday-based)
 
+✅ **Login API** (`auth`) — `POST /api/auth/login` (`AuthController`)
+
+- Body `{ userId, password }`; checks AppUser: exact UserId + `IsActive = 1` + `PasswordHash = SHA256(password)` (uppercase hex) in one SQL WHERE — any failure → 401 with generic `Invalid credentials.` (never reveals which check failed)
+- Success → `{ userId, userName, accessToken }`; PasswordHash never returned
+- JWT (HS256, 24 h expiry) signed with `symmetricSecurityKey` from SysConfig `appConfig` JSON, read at runtime (`IAuthRepository.GetSymmetricSecurityKeyAsync`)
+- Claims: `sub` + `userId`, `userName`, one `role` claim per AppUserRole RoleId (short `role` type — long `ClaimTypes.Role` URI is NOT auto-mapped when constructing `JwtSecurityToken` directly)
+- Package: `System.IdentityModel.Tokens.Jwt` 8.19.2
+
+✅ **JWT authorization end-to-end** (`auth`)
+
+- Backend: JWT bearer validation (`Microsoft.AspNetCore.Authentication.JwtBearer` 9.0.7); validation key = same SysConfig `symmetricSecurityKey`, resolved lazily via `IssuerSigningKeyResolver` (scoped `IAuthRepository`, cached after first fetch — DB is NOT hit at startup)
+- Global `FallbackPolicy` (RequireAuthenticatedUser) protects every controller; only `AuthController` is `[AllowAnonymous]` → no token = 401 everywhere else
+- `public partial class Program` exposed for `WebApplicationFactory<Program>` integration tests (`JwtAuthorizationTests` — 401 without/with-bad token, 200 with valid/login-issued token, login stays anonymous; repos mocked, no DB)
+- Frontend: Login page `/login` (public); profile `{ userId, userName, accessToken }` in **session** storage key `auth-profile` (`AuthService`, signal-based)
+- `authInterceptor` attaches `Authorization: Bearer`; any 401 (except from `/auth/login` itself) → clear session + redirect `/login`
+- `authGuard` (`canActivateChild` on the shell parent route in `app.routes.ts`) blocks all app routes without a token
+- Shell: topbar shows UserName + 登出 button; logged-out state renders bare `<router-outlet>` (no sidebar/topbar)
+- Roles come from the token's `role` claim(s) decoded client-side (array OR single string — single-role users get a plain string); `系統管理 Admin` sidebar group renders only when roles include `Admin`
+
 ## Lookup APIs (`/api/lookups/...`)
 
 - app-users
@@ -67,7 +86,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 83 tests · Frontend: 162 tests — all passing
+- Backend: 97 tests · Frontend: 184 tests — all passing
 
 ## Not Yet Implemented
 

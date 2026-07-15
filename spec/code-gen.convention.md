@@ -1,7 +1,8 @@
 # Code Generation Patterns
 
-Canonical coding conventions for all generated features. CLAUDE.md holds only the
-always-needed summary; this file is the detailed reference.
+Canonical coding conventions for all generated features. CLAUDE.md holds only
+pointers and hard constraints; this file is the single source of truth for
+conventions — read it fully before generating or modifying feature code.
 
 ## Backend
 

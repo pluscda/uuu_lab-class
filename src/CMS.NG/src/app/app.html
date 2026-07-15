@@ -1,40 +1,53 @@
-<header class="topbar" [class.collapsed]="sidebarCollapsed()">
-  <span class="brand">CMS</span>
-  <button
-    type="button"
-    class="menu-toggle"
-    [class.shifted]="sidebarCollapsed()"
-    (click)="toggleSidebar()"
-    aria-label="Toggle sidebar">
-    <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
-  </button>
-</header>
+@if (auth.isLoggedIn()) {
+  <header class="topbar" [class.collapsed]="sidebarCollapsed()">
+    <span class="brand">CMS</span>
+    <button
+      type="button"
+      class="menu-toggle"
+      [class.shifted]="sidebarCollapsed()"
+      (click)="toggleSidebar()"
+      aria-label="Toggle sidebar">
+      <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
+    </button>
+    <div class="topbar-user">
+      <i class="pi pi-user"></i>
+      <span class="user-name">{{ auth.userName() }}</span>
+      <button type="button" class="logout-button" (click)="logout()">
+        <i class="pi pi-sign-out"></i>
+        <span>登出</span>
+      </button>
+    </div>
+  </header>
 
-<div class="layout" [class.collapsed]="sidebarCollapsed()">
-  <aside class="sidebar">
-    <nav class="sidebar-nav">
-      @for (group of navGroups(); track group.label) {
-        <button type="button" class="nav-group" (click)="toggleGroup(group)">
-          <i [class]="group.icon"></i>
-          <span class="nav-label">{{ group.label }}</span>
-          <i class="pi chevron" [class.pi-angle-down]="group.expanded" [class.pi-angle-right]="!group.expanded"></i>
-        </button>
-        @if (group.expanded) {
-          @for (item of group.items; track item.route) {
-            <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
-              <i [class]="item.icon"></i>
-              <span class="nav-label">{{ item.label }}</span>
-            </a>
+  <div class="layout" [class.collapsed]="sidebarCollapsed()">
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        @for (group of visibleNavGroups(); track group.label) {
+          <button type="button" class="nav-group" (click)="toggleGroup(group)">
+            <i [class]="group.icon"></i>
+            <span class="nav-label">{{ group.label }}</span>
+            <i class="pi chevron" [class.pi-angle-down]="group.expanded" [class.pi-angle-right]="!group.expanded"></i>
+          </button>
+          @if (group.expanded) {
+            @for (item of group.items; track item.route) {
+              <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+                <i [class]="item.icon"></i>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
           }
         }
-      }
-    </nav>
-  </aside>
+      </nav>
+    </aside>
 
-  <main class="content">
-    <router-outlet />
-  </main>
-</div>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <!-- Logged out: only the public Login route renders, without the app shell -->
+  <router-outlet />
+}
 
 <p-toast position="top-right" />
 <p-confirmdialog />

@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
-export const routes: Routes = [
+// Every route except /login sits under the authGuard-protected shell below
+const appRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'app-roles' },
   {
     path: 'app-roles',
@@ -146,4 +148,16 @@ export const routes: Routes = [
       )
   },
   { path: '**', redirectTo: 'app-roles' }
+];
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () => import('./features/login/login').then(m => m.Login)
+  },
+  {
+    path: '',
+    canActivateChild: [authGuard],
+    children: appRoutes
+  }
 ];

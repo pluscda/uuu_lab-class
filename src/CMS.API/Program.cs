@@ -1,6 +1,10 @@
+using System.Text;
 using CMS.API.Data;
 using CMS.API.Repositories;
 using Dapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 
 SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
@@ -9,6 +13,42 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IServiceProvider>((options, serviceProvider) =>
+    {
+        // Validation key = the same SysConfig 'appConfig' symmetricSecurityKey the
+        // AuthController signs with; fetched on first use (DB not available at startup
+        // config time), then cached for the process lifetime.
+        SecurityKey[]? cachedKeys = null;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeyResolver = (_, _, _, _) =>
+            {
+                if (cachedKeys is null)
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var secret = scope.ServiceProvider.GetRequiredService<IAuthRepository>()
+                        .GetSymmetricSecurityKeyAsync().GetAwaiter().GetResult();
+                    cachedKeys = [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))];
+                }
+                return cachedKeys;
+            }
+        };
+    });
+
+// Every endpoint requires an authenticated user unless it opts out with
+// [AllowAnonymous] (only AuthController does).
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddCors(options =>
 {
@@ -21,6 +61,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAppRoleRepository, AppRoleRepository>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
 builder.Services.AddScoped<IPublishStatusRepository, PublishStatusRepository>();
@@ -37,6 +78,12 @@ app.UseSwaggerUI();
 
 app.UseCors("Localhost");
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
+
+// Exposes the entry point to WebApplicationFactory<Program> in CMS.API.Tests
+public partial class Program { }
