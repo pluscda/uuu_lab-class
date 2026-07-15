@@ -86,6 +86,21 @@ function flushLookups(httpMock: HttpTestingController): void {
   httpMock.expectOne(`${lookupsUrl}/job-categories`).flush([{ pkid: 1, description: '系統工程師' }]);
 }
 
+function expectStickyToolbar(fixture: ComponentFixture<CourseForm>): void {
+  const toolbar = (fixture.nativeElement as HTMLElement).querySelector('.page-toolbar') as HTMLElement;
+  expect(toolbar).withContext('action toolbar should render').not.toBeNull();
+  expect(toolbar.classList.contains('form-toolbar-sticky'))
+    .withContext('toolbar should carry the sticky modifier class')
+    .toBeTrue();
+  expect(getComputedStyle(toolbar).position).toBe('sticky');
+
+  const labels = Array.from(toolbar.querySelectorAll('.toolbar-actions button')).map(
+    button => button.textContent?.trim() ?? ''
+  );
+  expect(labels).toContain('儲存');
+  expect(labels).toContain('取消');
+}
+
 describe('CourseForm (add mode)', () => {
   it('should load all lookup options via forkJoin', () => {
     const { fixture, component, httpMock } = setup(null);
@@ -95,6 +110,16 @@ describe('CourseForm (add mode)', () => {
     expect(component.isEdit()).toBeFalse();
     expect(component.partnerOptions().length).toBe(1);
     expect(component.certificationOptions()[0].label).toBe('Azure Fundamentals');
+    httpMock.verify();
+  });
+
+  it('should render a sticky (pinned) action toolbar with Save and Cancel', () => {
+    const { fixture, httpMock } = setup(null);
+    fixture.detectChanges();
+    flushLookups(httpMock);
+    fixture.detectChanges();
+
+    expectStickyToolbar(fixture);
     httpMock.verify();
   });
 
@@ -167,6 +192,18 @@ describe('CourseForm (edit mode)', () => {
     expect(component.form.controls.scheduleOn.value).toEqual(new Date(2026, 0, 1));
     expect(component.form.controls.scheduleOff.value).toEqual(new Date(2036, 0, 1));
     expect(component.form.controls.certificationPkids.value).toEqual([10]);
+    httpMock.verify();
+  });
+
+  it('should render a sticky (pinned) action toolbar with Save and Cancel', () => {
+    const { fixture, httpMock } = setup('1');
+    fixture.detectChanges();
+
+    flushLookups(httpMock);
+    httpMock.expectOne(`${baseUrl}/1`).flush(azureCourse);
+    fixture.detectChanges();
+
+    expectStickyToolbar(fixture);
     httpMock.verify();
   });
 
