@@ -32,7 +32,9 @@ Update this file when a module is completed or deferred work changes.
 - FK labels resolved by JOIN (`PartnerName`, `CourseGroupDescription`, `PublishStatusDescription`)
 - N-N: `CourseInCertification`, `CourseJobCategories` (delete-then-reinsert, transactional)
 - ScheduleOff auto-defaults to ScheduleOn + 10 years in the form
-- Excluded for now: copy endpoint, QR code, print-PDF, child sub-panels
+- Excluded for now: copy endpoint, print-PDF, child sub-panels
+- Detail page QR code (基本資料): encodes `https://www.uuu.com.tw/Course/Show/{pkid}/{CourseId}`, caption = CourseId, downloadable as `{CourseId}.png`; generated client-side via `QrCodeService` (`core/services/qr-code.service.ts`, wraps npm `qrcode` — allow-listed in `angular.json` `allowedCommonJsDependencies`)
+- List page in-place editing: double-click a cell (single click ignored; pkid/原廠/課程群組 read-only), commit on blur (dropdown/checkbox on change, datepicker on select + deferred blur). Commit flow is GET-by-id → patch field → PUT — required because PUT delete-then-reinserts N-N links and list rows carry empty ID lists. Validation inline (required, non-negative numbers, valid dates, 上架日期 ≤ 下架日期); failed save reverts and toasts
 
 ✅ **FeaturedPromoItem** custom weekly board (`promotion`) — spec: `spec/custom/FeaturedPromoItem/FeaturedPromoItem.spec.md`
 
@@ -65,7 +67,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 83 tests · Frontend: 150 tests — all passing
+- Backend: 83 tests · Frontend: 162 tests — all passing
 
 ## Not Yet Implemented
 
@@ -79,5 +81,5 @@ Remaining modules
 Deferred Course features
 
 - Copy endpoint (`POST /api/courses/{id}/copy`)
-- Course detail QR code, 列印PDF
+- 列印PDF (QR code done)
 - Primary-Foreign link buttons (parent pages → child lists) once child modules exist

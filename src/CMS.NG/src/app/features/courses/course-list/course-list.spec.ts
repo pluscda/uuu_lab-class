@@ -187,6 +187,149 @@ describe('CourseList', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['/courses/new']);
   });
 
+  describe('inline cell editing', () => {
+    function cell(rowIndex: number, field: string): HTMLElement {
+      const row = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')[rowIndex];
+      return row.querySelector(`td[data-field="${field}"]`) as HTMLElement;
+    }
+
+    function dblclick(el: HTMLElement): void {
+      el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      fixture.detectChanges();
+    }
+
+    function blur(el: HTMLElement): void {
+      el.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+    }
+
+    it('double-click enters edit mode; single click does not', () => {
+      flushInitial();
+      const titleCell = cell(0, 'title');
+
+      titleCell.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      fixture.detectChanges();
+      expect(titleCell.querySelector('input')).toBeNull();
+      expect(component.editingField()).toBeNull();
+
+      dblclick(titleCell);
+      const input = titleCell.querySelector('input') as HTMLInputElement;
+      expect(input).toBeTruthy();
+      expect(component.editingField()).toBe('title');
+      expect(component.editingPkid()).toBe(1);
+      expect(component.editValue).toBe('Azure 基礎課程');
+    });
+
+    it('read-only columns (主代碼/原廠/課程群組) cannot be edited', () => {
+      flushInitial();
+      const row = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')[0];
+      // Column order: 0 = pkid, 5 = partnerName, 6 = courseGroupDescription
+      for (const index of [0, 5, 6]) {
+        const td = row.children[index] as HTMLElement;
+        td.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        fixture.detectChanges();
+        expect(td.querySelector('input, p-select, p-datepicker, p-checkbox')).toBeNull();
+        expect(component.editingField()).toBeNull();
+      }
+    });
+
+    it('blur persists the edit via GET-by-id then PUT, preserving N-N ids', () => {
+      flushInitial();
+      const titleCell = cell(0, 'title');
+      dblclick(titleCell);
+
+      component.editValue = '新課程名稱';
+      blur(titleCell.querySelector('input')!);
+
+      const getReq = httpMock.expectOne(`${environment.apiUrl}/courses/1`);
+      expect(getReq.request.method).toBe('GET');
+      getReq.flush({ ...courses[0], certificationPkids: [9], jobCategoryPkids: [4] });
+
+      const putReq = httpMock.expectOne(`${environment.apiUrl}/courses`);
+      expect(putReq.request.method).toBe('PUT');
+      expect(putReq.request.body.title).toBe('新課程名稱');
+      expect(putReq.request.body.certificationPkids).toEqual([9]);
+      expect(putReq.request.body.jobCategoryPkids).toEqual([4]);
+      putReq.flush(null);
+      fixture.detectChanges();
+
+      expect(component.courses()[0].title).toBe('新課程名稱');
+      expect(component.editingField()).toBeNull();
+      expect(cell(0, 'title').textContent).toContain('新課程名稱');
+    });
+
+    it('required field cleared: shows inline error, stays in edit mode, no HTTP call', () => {
+      flushInitial();
+      const titleCell = cell(0, 'title');
+      dblclick(titleCell);
+
+      component.editValue = '   ';
+      blur(titleCell.querySelector('input')!);
+
+      expect(component.editError()).toBe('此欄位為必填');
+      expect(component.editingField()).toBe('title');
+      expect(cell(0, 'title').querySelector('.edit-error')).toBeTruthy();
+      expect(cell(0, 'title').querySelector('input')).toBeTruthy();
+      // httpMock.verify() in afterEach asserts no update request was made
+    });
+
+    it('negative number: shows inline error and blocks the save', () => {
+      flushInitial();
+      const hourCell = cell(0, 'hour');
+      dblclick(hourCell);
+
+      component.editValue = -5;
+      blur(hourCell.querySelector('input')!);
+
+      expect(component.editError()).toBe('必須為非負數字');
+      expect(component.editingField()).toBe('hour');
+    });
+
+    it('invalid date: shows inline error and blocks the save', () => {
+      flushInitial();
+      component.startEdit(courses[0], 'scheduleOn');
+      component.editValue = null;
+      component.commitEdit(courses[0]);
+
+      expect(component.editError()).toBe('請輸入有效日期');
+      expect(component.editingField()).toBe('scheduleOn');
+    });
+
+    it('上架日期 after 下架日期: shows inline error and blocks the save', () => {
+      flushInitial();
+
+      component.startEdit(courses[0], 'scheduleOn');
+      component.editValue = new Date(2037, 0, 1); // scheduleOff is 2036-01-01
+      component.commitEdit(courses[0]);
+      expect(component.editError()).toBe('上架日期不可晚於下架日期');
+
+      component.startEdit(courses[0], 'scheduleOff');
+      component.editValue = new Date(2025, 0, 1); // scheduleOn is 2026-01-01
+      component.commitEdit(courses[0]);
+      expect(component.editError()).toBe('上架日期不可晚於下架日期');
+    });
+
+    it('failed save reverts the cell to its previous value and exits edit mode', () => {
+      flushInitial();
+      const titleCell = cell(0, 'title');
+      dblclick(titleCell);
+
+      component.editValue = '不會儲存的名稱';
+      blur(titleCell.querySelector('input')!);
+
+      httpMock.expectOne(`${environment.apiUrl}/courses/1`).flush(courses[0]);
+      httpMock
+        .expectOne(`${environment.apiUrl}/courses`)
+        .flush('error', { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+
+      expect(component.courses()[0].title).toBe('Azure 基礎課程');
+      expect(component.editingField()).toBeNull();
+      expect(cell(0, 'title').textContent).toContain('Azure 基礎課程');
+      expect(cell(0, 'title').querySelector('input')).toBeNull();
+    });
+  });
+
   it('delete (via confirm accept) should call DELETE and reload', () => {
     const confirmationService = TestBed.inject(ConfirmationService);
     spyOn(confirmationService, 'confirm').and.callFake((options: any) => {

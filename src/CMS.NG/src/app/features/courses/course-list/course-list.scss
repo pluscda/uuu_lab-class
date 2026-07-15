@@ -9,6 +9,32 @@
   width: 100%;
 }
 
+.editable-cell {
+  cursor: cell;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+input.cell-editor {
+  width: 100%;
+  min-width: 5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.cell-editor {
+  display: block;
+  width: 100%;
+}
+
+.edit-error {
+  display: block;
+  margin-top: 0.25rem;
+  color: #dc2626;
+  white-space: normal;
+}
+
 :host ::ng-deep .filter-drawer {
   width: 24rem;
 }
