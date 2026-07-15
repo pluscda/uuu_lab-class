@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, UserProfile } from '../models/auth.model';
+import { ChangePasswordRequest, LoginRequest, ProfileResponse, UserProfile } from '../models/auth.model';
 
 export const AUTH_STORAGE_KEY = 'auth-profile';
 
@@ -33,6 +33,31 @@ export class AuthService {
         this.profileSignal.set(profile);
       })
     );
+  }
+
+  /**
+   * Updates the signed-in user's UserName (the server identifies the user from
+   * the JWT) and refreshes the stored profile so the shell picks up the change.
+   */
+  updateUserName(userName: string): Observable<ProfileResponse> {
+    return this.http.put<ProfileResponse>(`${environment.apiUrl}/auth/profile`, { userName }).pipe(
+      tap(response => {
+        const current = this.profileSignal();
+        if (!current) return;
+        const updated: UserProfile = { ...current, userName: response.userName };
+        sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+        this.profileSignal.set(updated);
+      })
+    );
+  }
+
+  /**
+   * Changes the signed-in user's password (the server identifies the user from
+   * the JWT and verifies the current password). The stored profile/token are
+   * untouched — the session stays valid.
+   */
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/auth/change-password`, request);
   }
 
   /** Clears the session and returns to the Login page. */

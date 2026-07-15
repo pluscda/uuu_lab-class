@@ -141,6 +141,11 @@ const appRoutes: Routes = [
       import('./features/courses/course-form/course-form').then(m => m.CourseForm)
   },
   {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/my-profile/my-profile').then(m => m.MyProfile)
+  },
+  {
     path: 'featured-promo-items',
     loadComponent: () =>
       import('./features/featured-promo-items/featured-promo-board/featured-promo-board').then(

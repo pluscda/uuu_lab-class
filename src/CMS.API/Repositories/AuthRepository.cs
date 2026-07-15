@@ -24,6 +24,28 @@ public class AuthRepository(IDbConnectionFactory connectionFactory) : IAuthRepos
         return user;
     }
 
+    public async Task<bool> UpdateUserNameAsync(string userId, string userName)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var rows = await connection.ExecuteAsync(
+            "UPDATE AppUser SET UserName = @UserName WHERE UserId = @UserId",
+            new { UserId = userId, UserName = userName });
+        return rows > 0;
+    }
+
+    public async Task<bool> ChangePasswordAsync(string userId, string currentPasswordHash, string newPasswordHash)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        // The current-password check lives in the WHERE clause so verify + update
+        // is one atomic statement: a wrong current password changes nothing.
+        var rows = await connection.ExecuteAsync("""
+            UPDATE AppUser
+            SET PasswordHash = @NewPasswordHash, PasswordUpdatedTime = GETUTCDATE()
+            WHERE UserId = @UserId AND IsActive = 1 AND PasswordHash = @CurrentPasswordHash
+            """, new { UserId = userId, NewPasswordHash = newPasswordHash, CurrentPasswordHash = currentPasswordHash });
+        return rows > 0;
+    }
+
     public async Task<string> GetSymmetricSecurityKeyAsync()
     {
         using var connection = connectionFactory.CreateConnection();

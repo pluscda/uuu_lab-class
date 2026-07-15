@@ -57,13 +57,27 @@ Update this file when a module is completed or deferred work changes.
 ✅ **JWT authorization end-to-end** (`auth`)
 
 - Backend: JWT bearer validation (`Microsoft.AspNetCore.Authentication.JwtBearer` 9.0.7); validation key = same SysConfig `symmetricSecurityKey`, resolved lazily via `IssuerSigningKeyResolver` (scoped `IAuthRepository`, cached after first fetch — DB is NOT hit at startup)
-- Global `FallbackPolicy` (RequireAuthenticatedUser) protects every controller; only `AuthController` is `[AllowAnonymous]` → no token = 401 everywhere else
+- Global `FallbackPolicy` (RequireAuthenticatedUser) protects every controller; only the `Login` action is `[AllowAnonymous]` (action-level, NOT class-level — a class-level attribute would also unprotect `PUT /api/auth/profile`) → no token = 401 everywhere else
 - `public partial class Program` exposed for `WebApplicationFactory<Program>` integration tests (`JwtAuthorizationTests` — 401 without/with-bad token, 200 with valid/login-issued token, login stays anonymous; repos mocked, no DB)
 - Frontend: Login page `/login` (public); profile `{ userId, userName, accessToken }` in **session** storage key `auth-profile` (`AuthService`, signal-based)
 - `authInterceptor` attaches `Authorization: Bearer`; any 401 (except from `/auth/login` itself) → clear session + redirect `/login`
 - `authGuard` (`canActivateChild` on the shell parent route in `app.routes.ts`) blocks all app routes without a token
 - Shell: topbar shows UserName + 登出 button; logged-out state renders bare `<router-outlet>` (no sidebar/topbar)
 - Roles come from the token's `role` claim(s) decoded client-side (array OR single string — single-role users get a plain string); `系統管理 Admin` sidebar group renders only when roles include `Admin`
+
+✅ **My Profile** (`auth`) — `/profile` page + `PUT /api/auth/profile`
+
+- Endpoint updates **UserName only** for the user identified by the JWT (`userId` claim, falling back to `NameIdentifier`/`sub`) — a `userId` or roles in the body have no DTO property and are ignored; 400 on empty/whitespace UserName (trimmed before save), 404 if the user no longer exists
+- Returns `{ userId, userName }`; `AuthService.updateUserName()` PUTs and patches the `auth-profile` session-storage profile + signal, so the topbar name refreshes without re-login
+- Page (`features/profile/my-profile`, no route params): UserId + role tags read-only display, UserName the only editable field; topbar user name/avatar is the link (`.profile-link` → `/profile`)
+
+✅ **Change Password** (`auth`) — My Profile card + `POST /api/auth/change-password`
+
+- Target UserId comes ONLY from the JWT; body `{ currentPassword, newPassword, confirmNewPassword }` — plain passwords only, hashes never cross the wire in either direction
+- Verify + update is ONE atomic SQL statement (`IAuthRepository.ChangePasswordAsync`): `UPDATE ... SET PasswordHash = SHA256(new), PasswordUpdatedTime = GETUTCDATE() WHERE UserId AND IsActive = 1 AND PasswordHash = SHA256(current)`; 0 rows → 400 目前密碼不正確 — a wrong current password changes nothing
+- Complexity rule (server + mirrored client validator): length ≥ 8 AND ≥ 3 of 4 classes (uppercase / lowercase / digit / anything-else-counts-as-symbol); rejection message is the bilingual 密碼長度至少需 8 碼… text; new/confirm mismatch → 400 新密碼與確認新密碼不一致
+- ⚠️ Validation failures return **400, never 401** — the Angular interceptor treats any 401 as session-expired and force-logs-out
+- Frontend: second card on `/profile` with its own `passwordForm` (`passwordComplexity` + group-level `passwordsMatch` validators, errors shown per-field); success toast + form reset; server 400 message surfaced via toast; `AuthService.changePassword()` leaves the stored profile/token untouched (session stays valid)
 
 ## Lookup APIs (`/api/lookups/...`)
 
@@ -86,7 +100,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 97 tests · Frontend: 184 tests — all passing
+- Backend: 126 tests · Frontend: 200 tests — all passing
 
 ## Not Yet Implemented
 

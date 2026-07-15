@@ -81,6 +81,57 @@ describe('AuthService', () => {
     expect(service.accessToken).toBeNull();
   });
 
+  it('updateUserName should PUT to /auth/profile and refresh the stored profile', () => {
+    const profile = fakeProfile(['Admin']);
+    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(profile));
+    const service = TestBed.inject(AuthService);
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    service.updateUserName('Helen Updated').subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/profile`);
+    expect(req.request.method).toBe('PUT');
+    // Only the new name goes over the wire — the server takes the user from the JWT
+    expect(req.request.body).toEqual({ userName: 'Helen Updated' });
+    req.flush({ userId: 'helen', userName: 'Helen Updated' });
+
+    expect(service.userName()).toBe('Helen Updated');
+    const stored = JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY)!) as UserProfile;
+    expect(stored.userName).toBe('Helen Updated');
+    // UserId and token are preserved untouched
+    expect(stored.userId).toBe('helen');
+    expect(stored.accessToken).toBe(profile.accessToken);
+    httpMock.verify();
+  });
+
+  it('changePassword should POST plain passwords and leave the stored profile untouched', () => {
+    const profile = fakeProfile(['Admin']);
+    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(profile));
+    const service = TestBed.inject(AuthService);
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    service.changePassword({
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass1!',
+      confirmNewPassword: 'NewPass1!'
+    }).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/change-password`);
+    expect(req.request.method).toBe('POST');
+    // Plain passwords only — hashing is strictly server-side
+    expect(req.request.body).toEqual({
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass1!',
+      confirmNewPassword: 'NewPass1!'
+    });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    // The session (profile + token) survives a password change
+    expect(JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY)!)).toEqual(profile);
+    expect(service.isLoggedIn()).toBeTrue();
+    httpMock.verify();
+  });
+
   it('logout should clear session storage and navigate to /login', () => {
     sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(fakeProfile(['Admin'])));
     const service = TestBed.inject(AuthService);

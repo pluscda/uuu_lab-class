@@ -96,6 +96,18 @@ describe('App', () => {
     expect(groupText).toContain('課程管理 Course');
   });
 
+  it('should link the topbar user to the My Profile page', () => {
+    seedSession(['Editor']);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.topbar-user .profile-link'
+    );
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('/profile');
+    expect(link!.textContent).toContain('Helen Chen');
+  });
+
   it('logout should clear the session and navigate to /login', () => {
     seedSession(['Admin']);
     const fixture = TestBed.createComponent(App);

@@ -1,0 +1,39 @@
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.page-card {
+  max-width: 560px;
+}
+
+.readonly-value {
+  color: #0f172a;
+  font-size: 0.95rem;
+  padding: 0.4rem 0;
+}
+
+.profile-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.password-form .page-card {
+  margin-top: 1rem;
+}
+
+.password-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}

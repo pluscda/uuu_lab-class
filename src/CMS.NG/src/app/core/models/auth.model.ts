@@ -9,3 +9,16 @@ export interface UserProfile {
   userName: string;
   accessToken: string;
 }
+
+/** PUT /api/auth/profile response — the server-confirmed identity fields. */
+export interface ProfileResponse {
+  userId: string;
+  userName: string;
+}
+
+/** POST /api/auth/change-password body — plain passwords only, never hashes. */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}

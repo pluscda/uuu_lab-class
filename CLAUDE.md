@@ -31,7 +31,7 @@ Dapper · `src/CMS.API.Tests` xUnit + Moq · `src/CMS.NG` Angular 20 + PrimeNG 2
 ## Auth (details in `spec/status.md`)
 
 - Every API endpoint requires a JWT Bearer token except `POST /api/auth/login`
-  (global FallbackPolicy; only `AuthController` is `[AllowAnonymous]`).
+  (global FallbackPolicy; only the `Login` action is `[AllowAnonymous]`).
   Swagger/manual calls need an `Authorization: Bearer` header too.
 - Token signed AND validated with SysConfig `appConfig.symmetricSecurityKey`
   (read from DB at runtime, never from appsettings).

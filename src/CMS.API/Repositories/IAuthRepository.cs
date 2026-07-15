@@ -12,4 +12,14 @@ public interface IAuthRepository
 
     /// <summary>JWT signing secret from SysConfig 'appConfig' JSON (symmetricSecurityKey).</summary>
     Task<string> GetSymmetricSecurityKeyAsync();
+
+    /// <summary>Updates UserName only; false when the user does not exist.</summary>
+    Task<bool> UpdateUserNameAsync(string userId, string userName);
+
+    /// <summary>
+    /// Atomically sets PasswordHash and PasswordUpdatedTime, but only when the
+    /// stored PasswordHash equals <paramref name="currentPasswordHash"/> and the
+    /// user is active; false (nothing changed) otherwise.
+    /// </summary>
+    Task<bool> ChangePasswordAsync(string userId, string currentPasswordHash, string newPasswordHash);
 }

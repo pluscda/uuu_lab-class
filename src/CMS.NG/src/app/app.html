@@ -10,8 +10,10 @@
       <i class="pi" [class.pi-chevron-left]="!sidebarCollapsed()" [class.pi-chevron-right]="sidebarCollapsed()"></i>
     </button>
     <div class="topbar-user">
-      <i class="pi pi-user"></i>
-      <span class="user-name">{{ auth.userName() }}</span>
+      <a class="profile-link" routerLink="/profile" title="個人資料 My Profile">
+        <i class="pi pi-user"></i>
+        <span class="user-name">{{ auth.userName() }}</span>
+      </a>
       <button type="button" class="logout-button" (click)="logout()">
         <i class="pi pi-sign-out"></i>
         <span>登出</span>

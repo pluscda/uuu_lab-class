@@ -83,17 +83,38 @@ $sidebar-collapsed-width: 64px;
     color: #334155;
     font-size: 0.925rem;
 
-    > .pi-user {
-      color: #2563eb;
-      background: #eff6ff;
-      border-radius: 50%;
-      padding: 0.45rem;
-      font-size: 0.85rem;
+    /* UserName + avatar double as the "My Profile" link */
+    .profile-link {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: background-color 0.2s ease;
+
+      .pi-user {
+        color: #2563eb;
+        background: #eff6ff;
+        border-radius: 50%;
+        padding: 0.45rem;
+        font-size: 0.85rem;
+      }
+
+      &:hover {
+        background: #f1f5f9;
+
+        .user-name {
+          color: #1d4ed8;
+        }
+      }
     }
 
     .user-name {
       font-weight: 600;
       color: #0f172a;
+      transition: color 0.2s ease;
     }
 
     .logout-button {

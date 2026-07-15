@@ -1,10 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CMS.API.Controllers;
 using CMS.API.Models;
 using CMS.API.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
@@ -134,6 +136,85 @@ public class AuthControllerTests
         var token = new JwtSecurityTokenHandler().ReadJwtToken(response.AccessToken);
         var lifetime = token.ValidTo - DateTime.UtcNow;
         Assert.InRange(lifetime, TimeSpan.FromHours(23.9), TimeSpan.FromHours(24.1));
+    }
+
+    /// <summary>Signs the controller in as the given user via JWT-style claims.</summary>
+    private void AuthenticateAs(params Claim[] claims)
+    {
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"))
+            }
+        };
+    }
+
+    [Fact]
+    public async Task UpdateProfile_UpdatesUserNameForTheJwtUser()
+    {
+        AuthenticateAs(new Claim("userId", "helen"));
+        _repository.Setup(r => r.UpdateUserNameAsync("helen", "New Name")).ReturnsAsync(true);
+
+        var result = await _controller.UpdateProfile(new UpdateProfileRequest { UserName = "New Name" });
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var profile = Assert.IsType<ProfileResponse>(ok.Value);
+        Assert.Equal("helen", profile.UserId);
+        Assert.Equal("New Name", profile.UserName);
+        _repository.Verify(r => r.UpdateUserNameAsync("helen", "New Name"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_TrimsTheUserName()
+    {
+        AuthenticateAs(new Claim("userId", "helen"));
+        _repository.Setup(r => r.UpdateUserNameAsync("helen", "New Name")).ReturnsAsync(true);
+
+        var result = await _controller.UpdateProfile(new UpdateProfileRequest { UserName = "  New Name  " });
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal("New Name", Assert.IsType<ProfileResponse>(ok.Value).UserName);
+        _repository.Verify(r => r.UpdateUserNameAsync("helen", "New Name"), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public async Task UpdateProfile_WithEmptyOrWhitespaceUserName_ReturnsBadRequest(string? userName)
+    {
+        AuthenticateAs(new Claim("userId", "helen"));
+
+        var result = await _controller.UpdateProfile(new UpdateProfileRequest { UserName = userName! });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        _repository.Verify(
+            r => r.UpdateUserNameAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_FallsBackToNameIdentifierClaim()
+    {
+        // Tokens carrying only the standard "sub" claim surface it as NameIdentifier
+        AuthenticateAs(new Claim(ClaimTypes.NameIdentifier, "helen"));
+        _repository.Setup(r => r.UpdateUserNameAsync("helen", "New Name")).ReturnsAsync(true);
+
+        var result = await _controller.UpdateProfile(new UpdateProfileRequest { UserName = "New Name" });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        _repository.Verify(r => r.UpdateUserNameAsync("helen", "New Name"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_WhenUserNoLongerExists_ReturnsNotFound()
+    {
+        AuthenticateAs(new Claim("userId", "ghost"));
+        _repository.Setup(r => r.UpdateUserNameAsync("ghost", "New Name")).ReturnsAsync(false);
+
+        var result = await _controller.UpdateProfile(new UpdateProfileRequest { UserName = "New Name" });
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
     }
 
     [Fact]
