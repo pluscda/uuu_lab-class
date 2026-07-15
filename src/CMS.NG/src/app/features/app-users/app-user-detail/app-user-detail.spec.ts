@@ -8,6 +8,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { environment } from '../../../../environments/environment';
 import { AppUserDetail } from './app-user-detail';
 import { AppUser } from '../../../core/models/app-user.model';
+import { AUTH_STORAGE_KEY } from '../../../core/services/auth.service';
 
 describe('AppUserDetail', () => {
   const helen: AppUser = {
@@ -44,7 +45,38 @@ describe('AppUserDetail', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    httpMock.verify();
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  });
+
+  function seedSession(sessionRoles: string[]): void {
+    const payload = btoa(JSON.stringify({ sub: 'caller', role: sessionRoles }));
+    sessionStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ userId: 'caller', userName: 'Caller', accessToken: `header.${payload}.signature` })
+    );
+  }
+
+  function renderedResetButton(): HTMLElement | null {
+    const fixture = TestBed.createComponent(AppUserDetail);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiUrl}/app-users/helen`).flush(helen);
+    httpMock.expectOne(`${environment.apiUrl}/lookups/app-roles`).flush(roles);
+    fixture.detectChanges();
+    const buttons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'));
+    return buttons.find(b => b.textContent?.includes('重設密碼')) ?? null;
+  }
+
+  it('should show the reset-password button only for Admins', () => {
+    seedSession(['Admin']);
+    expect(renderedResetButton()).not.toBeNull();
+  });
+
+  it('should hide the reset-password button for non-Admins', () => {
+    seedSession(['User']);
+    expect(renderedResetButton()).toBeNull();
+  });
 
   it('should load the user and resolve role labels', () => {
     const fixture = TestBed.createComponent(AppUserDetail);

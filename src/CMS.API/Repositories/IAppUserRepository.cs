@@ -11,5 +11,13 @@ public interface IAppUserRepository
     Task<bool> UpdateAsync(AppUserRequest request);
     Task<bool> DeleteAsync(string userId);
     Task<bool> ExistsAsync(string userId);
-    Task<bool> ResetPasswordAsync(string userId);
+
+    /// <summary>Plain default password from SysConfig 'appConfig' JSON (defaultPassword).</summary>
+    Task<string> GetDefaultPasswordAsync();
+
+    /// <summary>
+    /// Sets PasswordHash and PasswordUpdatedTime; false when the user does not exist.
+    /// The caller supplies the hash — plain passwords never reach this method.
+    /// </summary>
+    Task<bool> ResetPasswordAsync(string userId, string passwordHash);
 }

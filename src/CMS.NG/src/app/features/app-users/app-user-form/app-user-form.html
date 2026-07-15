@@ -4,6 +4,16 @@
       <h2>{{ isEdit() ? '編輯使用者' : '新增使用者' }}</h2>
     </div>
     <div class="toolbar-actions">
+      @if (isEdit() && auth.isAdmin()) {
+        <p-button
+          label="重設密碼"
+          icon="pi pi-key"
+          severity="warn"
+          [outlined]="true"
+          [loading]="resetting()"
+          styleClass="reset-password-button"
+          (onClick)="confirmResetPassword()" />
+      }
       <p-button
         label="取消"
         icon="pi pi-times"

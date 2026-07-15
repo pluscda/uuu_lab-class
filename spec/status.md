@@ -15,7 +15,8 @@ Update this file when a module is completed or deferred work changes.
 - String PK `UserId` (immutable on edit), `pkid` IDENTITY, N-N to AppRole via `AppUserRole` (`RoleIds`)
 - PasswordHash is backend-only: never in requests/responses/Angular models; SELECTs never include it
 - CREATE seeds PasswordHash from SysConfig `appConfig` JSON `defaultPassword` (SHA-256 uppercase hex); UPDATE never touches it
-- `POST /api/app-users/{id}/reset-password` re-applies the default and sets `PasswordUpdatedTime = GETUTCDATE()` (detail-page 重設密碼 button)
+- `POST /api/app-users/{id}/reset-password` re-applies the default and sets `PasswordUpdatedTime = GETUTCDATE()` — **Admin-only** (`[Authorize(Roles = "Admin")]` on top of the FallbackPolicy: non-Admin token → 403, never 401, so the interceptor doesn't force-logout). Controller reads the plain default via `IAppUserRepository.GetDefaultPasswordAsync()` and hands the repo the SHA-256 uppercase-hex hash (`ResetPasswordAsync(userId, passwordHash)`) — testable without a DB (`AppUserResetPasswordTests`). Request carries only the UserId (URL), response is 204 — no password/hash ever crosses the wire
+- 重設密碼 button on the detail page AND edit form — both rendered only when `AuthService.isAdmin()` (confirm dialog before reset)
 
 ✅ **PublishStatus** CRUD (`admin`) — spec: `spec/admin/PublishStatus.md`
 
@@ -100,7 +101,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 126 tests · Frontend: 200 tests — all passing
+- Backend: 132 tests · Frontend: 206 tests — all passing
 
 ## Not Yet Implemented
 

@@ -76,7 +76,7 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
-        var passwordHash = await GetDefaultPasswordHashAsync(connection, transaction);
+        var passwordHash = Sha256Hex(await GetDefaultPasswordAsync(connection, transaction));
 
         var pkid = await connection.ExecuteScalarAsync<int>("""
             INSERT INTO AppUser (UserId, UserName, IsActive, PasswordHash)
@@ -146,26 +146,25 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         return count > 0;
     }
 
-    public async Task<bool> ResetPasswordAsync(string userId)
+    public async Task<string> GetDefaultPasswordAsync()
     {
         using var connection = connectionFactory.CreateConnection();
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
+        return await GetDefaultPasswordAsync(connection, transaction: null);
+    }
 
-        var passwordHash = await GetDefaultPasswordHashAsync(connection, transaction);
-
+    public async Task<bool> ResetPasswordAsync(string userId, string passwordHash)
+    {
+        using var connection = connectionFactory.CreateConnection();
         var affected = await connection.ExecuteAsync("""
             UPDATE AppUser
             SET PasswordHash = @PasswordHash, PasswordUpdatedTime = GETUTCDATE()
             WHERE UserId = @UserId
-            """, new { UserId = userId, PasswordHash = passwordHash }, transaction);
-
-        transaction.Commit();
+            """, new { UserId = userId, PasswordHash = passwordHash });
         return affected > 0;
     }
 
     // Default password comes from SysConfig 'appConfig' (JSON: { "defaultPassword": "..." })
-    private static async Task<string> GetDefaultPasswordHashAsync(IDbConnection connection, IDbTransaction transaction)
+    private static async Task<string> GetDefaultPasswordAsync(IDbConnection connection, IDbTransaction? transaction)
     {
         var configValue = await connection.ExecuteScalarAsync<string?>(
             "SELECT configValue FROM SysConfig WHERE configKey = 'appConfig'",
@@ -178,8 +177,12 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
             || defaultPassword.ValueKind != JsonValueKind.String)
             throw new InvalidOperationException("SysConfig 'appConfig' has no 'defaultPassword' property.");
 
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(defaultPassword.GetString()!)));
+        return defaultPassword.GetString()!;
     }
+
+    // Login hash convention: SHA-256 of the UTF-8 bytes, uppercase hex
+    private static string Sha256Hex(string value) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
     private static async Task InsertUserRolesAsync(
         IDbConnection connection, IDbTransaction transaction, AppUserRequest request)

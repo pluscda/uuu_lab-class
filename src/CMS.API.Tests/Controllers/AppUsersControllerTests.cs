@@ -154,21 +154,30 @@ public class AppUsersControllerTests
         Assert.IsType<NotFoundResult>(result);
     }
 
+    // SHA-256 uppercase hex of "CMS4fun#" — the hash the controller must derive
+    // from the SysConfig default password before it reaches the repository
+    private const string DefaultPassword = "CMS4fun#";
+    private static readonly string DefaultPasswordHash =
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(DefaultPassword)));
+
     [Fact]
-    public async Task ResetPassword_WhenFound_ReturnsNoContent()
+    public async Task ResetPassword_WhenFound_HashesTheSysConfigDefaultAndReturnsNoContent()
     {
-        _repository.Setup(r => r.ResetPasswordAsync("helen")).ReturnsAsync(true);
+        _repository.Setup(r => r.GetDefaultPasswordAsync()).ReturnsAsync(DefaultPassword);
+        _repository.Setup(r => r.ResetPasswordAsync("helen", DefaultPasswordHash)).ReturnsAsync(true);
 
         var result = await _controller.ResetPassword("helen");
 
+        // 204: no password, hash, or any other data is returned
         Assert.IsType<NoContentResult>(result);
-        _repository.Verify(r => r.ResetPasswordAsync("helen"), Times.Once);
+        _repository.Verify(r => r.ResetPasswordAsync("helen", DefaultPasswordHash), Times.Once);
     }
 
     [Fact]
     public async Task ResetPassword_WhenNotFound_ReturnsNotFound()
     {
-        _repository.Setup(r => r.ResetPasswordAsync("nope")).ReturnsAsync(false);
+        _repository.Setup(r => r.GetDefaultPasswordAsync()).ReturnsAsync(DefaultPassword);
+        _repository.Setup(r => r.ResetPasswordAsync("nope", It.IsAny<string>())).ReturnsAsync(false);
 
         var result = await _controller.ResetPassword("nope");
 

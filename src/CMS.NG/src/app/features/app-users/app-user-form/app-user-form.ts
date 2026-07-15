@@ -7,9 +7,10 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { AppRoleLookup, AppUserRequest } from '../../../core/models/app-user.model';
 import { AppUserService } from '../../../core/services/app-user.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { LookupService } from '../../../core/services/lookup.service';
 
 @Component({
@@ -30,10 +31,15 @@ export class AppUserForm implements OnInit {
   private readonly lookupService = inject(LookupService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  // Reset-to-default-password is Admin-only: the button is hidden for everyone
+  // else, and the API enforces the same rule server-side (403 for non-Admins).
+  protected readonly auth = inject(AuthService);
 
   readonly isEdit = signal(false);
   readonly saving = signal(false);
+  readonly resetting = signal(false);
   readonly roleOptions = signal<{ value: string; label: string }[]>([]);
 
   // No password field: PasswordHash is backend-only and seeded from the
@@ -107,6 +113,34 @@ export class AppUserForm implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/app-users']);
+  }
+
+  confirmResetPassword(): void {
+    const userId = this.form.getRawValue().userId;
+    this.confirmationService.confirm({
+      header: '重設密碼確認',
+      message: `確定要將「${userId}」的密碼重設為系統預設密碼？`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonProps: { label: '重設密碼', severity: 'danger' },
+      rejectButtonProps: { label: '取消', severity: 'secondary', outlined: true },
+      accept: () => this.resetPassword(userId)
+    });
+  }
+
+  // Only the UserId is sent — the backend derives the default password from
+  // SysConfig and no password/hash ever crosses the wire.
+  private resetPassword(userId: string): void {
+    this.resetting.set(true);
+    this.service.resetPassword(userId).subscribe({
+      next: () => {
+        this.resetting.set(false);
+        this.messageService.add({ severity: 'success', summary: '成功', detail: '密碼已重設為系統預設密碼' });
+      },
+      error: () => {
+        this.resetting.set(false);
+        this.messageService.add({ severity: 'error', summary: '錯誤', detail: '重設密碼失敗' });
+      }
+    });
   }
 
   private setRoleOptions(roles: AppRoleLookup[]): void {

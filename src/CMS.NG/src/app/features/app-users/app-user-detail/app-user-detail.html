@@ -7,7 +7,9 @@
   </div>
   <div class="toolbar-actions">
     <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
-    <p-button label="重設密碼" icon="pi pi-key" severity="warn" [outlined]="true" (onClick)="confirmResetPassword()" />
+    @if (auth.isAdmin()) {
+      <p-button label="重設密碼" icon="pi pi-key" severity="warn" [outlined]="true" (onClick)="confirmResetPassword()" />
+    }
     <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
   </div>
 </div>

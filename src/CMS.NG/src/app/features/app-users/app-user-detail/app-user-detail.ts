@@ -7,6 +7,7 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AppRoleLookup, AppUser } from '../../../core/models/app-user.model';
 import { AppUserService } from '../../../core/services/app-user.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { LookupService } from '../../../core/services/lookup.service';
 
 @Component({
@@ -22,6 +23,8 @@ export class AppUserDetail implements OnInit {
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  // Reset-to-default-password is Admin-only (the API also enforces this: 403)
+  protected readonly auth = inject(AuthService);
 
   readonly user = signal<AppUser | null>(null);
   readonly roles = signal<AppRoleLookup[]>([]);
