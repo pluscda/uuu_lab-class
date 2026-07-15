@@ -47,6 +47,28 @@
   }
 }
 
+.qr-block {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  width: fit-content;
+
+  .qr-title {
+    color: #1e293b;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .qr-image {
+    width: 160px;
+    height: 160px;
+  }
+}
+
 .tag-list {
   display: flex;
   flex-wrap: wrap;

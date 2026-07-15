@@ -8,8 +8,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { environment } from '../../../../environments/environment';
 import { CourseDetail } from './course-detail';
 import { Course } from '../../../core/models/course.model';
+import { QrCodeService } from '../../../core/services/qr-code.service';
 
 describe('CourseDetail', () => {
+  const fakeQrDataUrl =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
   const azureCourse: Course = {
     pkid: 1,
     title: 'Azure 基礎課程',
@@ -43,8 +46,12 @@ describe('CourseDetail', () => {
   };
 
   let httpMock: HttpTestingController;
+  let qrCodeService: jasmine.SpyObj<QrCodeService>;
 
   beforeEach(async () => {
+    qrCodeService = jasmine.createSpyObj<QrCodeService>('QrCodeService', ['toDataUrl']);
+    qrCodeService.toDataUrl.and.resolveTo(fakeQrDataUrl);
+
     await TestBed.configureTestingModule({
       imports: [CourseDetail],
       providers: [
@@ -55,6 +62,7 @@ describe('CourseDetail', () => {
         providePrimeNG(),
         ConfirmationService,
         MessageService,
+        { provide: QrCodeService, useValue: qrCodeService },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: new Map([['id', '1']]) } }
@@ -66,7 +74,7 @@ describe('CourseDetail', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should load the course and resolve relation labels', () => {
+  function createAndLoad() {
     const fixture = TestBed.createComponent(CourseDetail);
     fixture.detectChanges();
 
@@ -78,7 +86,11 @@ describe('CourseDetail', () => {
       .expectOne(`${environment.apiUrl}/lookups/job-categories`)
       .flush([{ pkid: 1, description: '系統工程師' }]);
     fixture.detectChanges();
+    return fixture;
+  }
 
+  it('should load the course and resolve relation labels', () => {
+    const fixture = createAndLoad();
     const component = fixture.componentInstance;
     expect(component.course()?.courseId).toBe('AZ-900');
     expect(component.certificationLabel(10)).toBe('Azure Fundamentals');
@@ -89,5 +101,44 @@ describe('CourseDetail', () => {
     expect(compiled.textContent).toContain('Microsoft');
     expect(compiled.textContent).toContain('雲端運算');
     expect(compiled.textContent).toContain('Azure Fundamentals');
+  });
+
+  it('should encode the course show URL built from pkid and courseId into the QR code', () => {
+    createAndLoad();
+
+    expect(qrCodeService.toDataUrl).toHaveBeenCalledOnceWith(
+      'https://www.uuu.com.tw/Course/Show/1/AZ-900'
+    );
+  });
+
+  it('should render the QR code image with courseId as its title', async () => {
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const title = compiled.querySelector('.qr-block .qr-title');
+    expect(title?.textContent?.trim()).toBe('AZ-900');
+
+    const image = compiled.querySelector<HTMLImageElement>('.qr-block .qr-image');
+    expect(image?.src).toBe(fakeQrDataUrl);
+  });
+
+  it('should download the QR code as a PNG image named after the courseId', async () => {
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    let clickedAnchor: HTMLAnchorElement | undefined;
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
+      clickedAnchor = this;
+    });
+
+    fixture.componentInstance.downloadQrCode();
+
+    expect(clickedAnchor).toBeDefined();
+    expect(clickedAnchor!.href).toBe(fakeQrDataUrl);
+    expect(clickedAnchor!.download).toBe('AZ-900.png');
+    expect(clickedAnchor!.href.startsWith('data:image/png')).toBeTrue();
   });
 });

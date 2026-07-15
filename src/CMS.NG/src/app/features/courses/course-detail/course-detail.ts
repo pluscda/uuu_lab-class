@@ -7,6 +7,9 @@ import { MessageService } from 'primeng/api';
 import { CertificationLookup, Course, JobCategoryLookup } from '../../../core/models/course.model';
 import { CourseService } from '../../../core/services/course.service';
 import { LookupService } from '../../../core/services/lookup.service';
+import { QrCodeService } from '../../../core/services/qr-code.service';
+
+const COURSE_SHOW_URL_BASE = 'https://www.uuu.com.tw/Course/Show';
 
 @Component({
   selector: 'app-course-detail',
@@ -17,6 +20,7 @@ import { LookupService } from '../../../core/services/lookup.service';
 export class CourseDetail implements OnInit {
   private readonly service = inject(CourseService);
   private readonly lookupService = inject(LookupService);
+  private readonly qrCodeService = inject(QrCodeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
@@ -25,6 +29,7 @@ export class CourseDetail implements OnInit {
   readonly certifications = signal<CertificationLookup[]>([]);
   readonly jobCategories = signal<JobCategoryLookup[]>([]);
   readonly loading = signal(true);
+  readonly qrCodeDataUrl = signal<string | null>(null);
 
   ngOnInit(): void {
     const pkid = Number(this.route.snapshot.paramMap.get('id'));
@@ -38,6 +43,7 @@ export class CourseDetail implements OnInit {
         this.certifications.set(certifications);
         this.jobCategories.set(jobCategories);
         this.loading.set(false);
+        this.generateQrCode(course);
       },
       error: () => {
         this.loading.set(false);
@@ -55,6 +61,29 @@ export class CourseDetail implements OnInit {
   jobCategoryLabel(pkid: number): string {
     const jobCategory = this.jobCategories().find(j => j.pkid === pkid);
     return jobCategory?.description ?? String(pkid);
+  }
+
+  courseShowUrl(course: Course): string {
+    return `${COURSE_SHOW_URL_BASE}/${course.pkid}/${encodeURIComponent(course.courseId)}`;
+  }
+
+  downloadQrCode(): void {
+    const course = this.course();
+    const dataUrl = this.qrCodeDataUrl();
+    if (!course || !dataUrl) {
+      return;
+    }
+    const anchor = document.createElement('a');
+    anchor.href = dataUrl;
+    anchor.download = `${course.courseId}.png`;
+    anchor.click();
+  }
+
+  private generateQrCode(course: Course): void {
+    this.qrCodeService.toDataUrl(this.courseShowUrl(course)).then(
+      dataUrl => this.qrCodeDataUrl.set(dataUrl),
+      () => this.qrCodeDataUrl.set(null)
+    );
   }
 
   back(): void {

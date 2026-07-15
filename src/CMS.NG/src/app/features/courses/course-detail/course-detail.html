@@ -69,6 +69,23 @@
           </a>
         </span>
       </div>
+      <div class="detail-item full">
+        <span class="detail-label">課程 QR Code</span>
+        <div class="qr-block">
+          <span class="qr-title">{{ c.courseId }}</span>
+          @if (qrCodeDataUrl(); as qr) {
+            <img class="qr-image" [src]="qr" [alt]="'QR Code：' + courseShowUrl(c)" />
+            <p-button
+              label="下載 QR Code"
+              icon="pi pi-download"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              (onClick)="downloadQrCode()"
+            />
+          }
+        </div>
+      </div>
     </div>
   </div>
 
