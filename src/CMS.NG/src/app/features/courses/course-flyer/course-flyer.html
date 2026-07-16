@@ -1,0 +1,90 @@
+<div class="flyer-toolbar">
+  <div class="flyer-toolbar-title">
+    <span class="label">課程傳單預覽</span>
+    @if (course(); as c) {
+      <span class="subtitle">{{ c.courseId }} {{ c.title }}</span>
+    }
+  </div>
+  <div class="flyer-toolbar-actions">
+    <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
+    <p-button label="儲存 PDF" icon="pi pi-file-pdf" [disabled]="!course()" (onClick)="print()" />
+  </div>
+</div>
+
+@if (course(); as c) {
+  <div class="flyer-page">
+    <div class="flyer-header">
+      <div class="flyer-logo">CMS</div>
+      <div class="flyer-header-label">課 程 傳 單</div>
+    </div>
+
+    <div class="flyer-title-block">
+      <span class="flyer-course-id">課程代碼 {{ c.courseId }}</span>
+      <h1 class="flyer-title">{{ c.title }}</h1>
+    </div>
+
+    <div class="flyer-fact-strip">
+      <div class="flyer-fact">
+        <span class="flyer-fact-label">原廠</span>
+        <span class="flyer-fact-value">{{ c.partnerName }}</span>
+      </div>
+      <div class="flyer-fact">
+        <span class="flyer-fact-label">時數</span>
+        <span class="flyer-fact-value">{{ c.hour }} 小時</span>
+      </div>
+      <div class="flyer-fact">
+        <span class="flyer-fact-label">定價</span>
+        <span class="flyer-fact-value">NT$ {{ c.listPrice | number }}</span>
+      </div>
+      <div class="flyer-fact">
+        <span class="flyer-fact-label">點數</span>
+        <span class="flyer-fact-value">{{ c.learningCredit }} 點</span>
+      </div>
+    </div>
+
+    @if (c.objective) {
+      <div class="flyer-section">
+        <h2 class="flyer-section-title">課程目標</h2>
+        <p class="flyer-section-body flyer-clamp-3">{{ c.objective }}</p>
+      </div>
+    }
+
+    @if (c.target) {
+      <div class="flyer-section">
+        <h2 class="flyer-section-title">適合對象</h2>
+        <p class="flyer-section-body flyer-clamp-2">{{ c.target }}</p>
+      </div>
+    }
+
+    @if (c.outline) {
+      <div class="flyer-section flyer-section-outline">
+        <h2 class="flyer-section-title">課程大綱</h2>
+        <p #outlineValue class="flyer-section-body flyer-clamp-outline">{{ c.outline }}</p>
+        @if (outlineClamped()) {
+          @if (qrCodeDataUrl()) {
+            <p class="flyer-clamp-note">（大綱節錄 — 完整內容請掃描 QR Code 瀏覽課程網頁）</p>
+          } @else {
+            <p class="flyer-clamp-note">（大綱節錄 — 完整內容請至 {{ qrCodeUrl() }} 瀏覽）</p>
+          }
+        }
+      </div>
+    }
+
+    <div class="flyer-footer">
+      @if (qrCodeDataUrl(); as qr) {
+        <img class="flyer-qr" [src]="qr" [alt]="'QR Code：' + qrCodeUrl()" />
+        <div class="flyer-footer-text">
+          <span class="flyer-scan-caption">掃描查看完整課程資訊</span>
+          <span class="flyer-scan-url">{{ qrCodeUrl() }}</span>
+        </div>
+      } @else if (qrCodeUrl(); as url) {
+        <div class="flyer-footer-text">
+          <span class="flyer-scan-caption">完整課程資訊</span>
+          <span class="flyer-scan-url">{{ url }}</span>
+        </div>
+      }
+    </div>
+  </div>
+} @else if (!loading()) {
+  <div class="page-card">查無資料</div>
+}

@@ -9,8 +9,7 @@ import { CourseService } from '../../../core/services/course.service';
 import { LookupService } from '../../../core/services/lookup.service';
 import { QrCodeService } from '../../../core/services/qr-code.service';
 import { RowAuditBadgeComponent } from '../../../shared/row-audit-badge/row-audit-badge';
-
-const COURSE_SHOW_URL_BASE = 'https://www.uuu.com.tw/Course/Show';
+import { courseShowUrl as buildCourseShowUrl } from '../../../core/utils/course-url.util';
 
 @Component({
   selector: 'app-course-detail',
@@ -65,7 +64,7 @@ export class CourseDetail implements OnInit {
   }
 
   courseShowUrl(course: Course): string {
-    return `${COURSE_SHOW_URL_BASE}/${course.pkid}/${encodeURIComponent(course.courseId)}`;
+    return buildCourseShowUrl(course);
   }
 
   downloadQrCode(): void {
@@ -95,6 +94,13 @@ export class CourseDetail implements OnInit {
     const course = this.course();
     if (course) {
       this.router.navigate(['/courses', course.pkid, 'edit']);
+    }
+  }
+
+  printFlyer(): void {
+    const course = this.course();
+    if (course) {
+      this.router.navigate(['/courses', course.pkid, 'flyer']);
     }
   }
 }

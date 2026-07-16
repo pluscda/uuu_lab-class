@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { providePrimeNG } from 'primeng/config';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -144,5 +144,34 @@ describe('CourseDetail', () => {
     expect(clickedAnchor!.href).toBe(fakeQrDataUrl);
     expect(clickedAnchor!.download).toBe('AZ-900.png');
     expect(clickedAnchor!.href.startsWith('data:image/png')).toBeTrue();
+  });
+
+  it('should navigate to the flyer route on printFlyer', () => {
+    const fixture = createAndLoad();
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+
+    fixture.componentInstance.printFlyer();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/courses', 1, 'flyer']);
+  });
+
+  it('should not navigate on printFlyer before the course has loaded', () => {
+    const fixture = TestBed.createComponent(CourseDetail);
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+
+    fixture.componentInstance.printFlyer();
+
+    expect(navigateSpy).not.toHaveBeenCalled();
+
+    httpMock.expectOne(`${environment.apiUrl}/courses/1`).flush(azureCourse);
+    httpMock
+      .expectOne(`${environment.apiUrl}/lookups/certifications`)
+      .flush([{ pkid: 10, partnerPkid: 1, title: 'Azure Fundamentals' }]);
+    httpMock
+      .expectOne(`${environment.apiUrl}/lookups/job-categories`)
+      .flush([{ pkid: 1, description: '系統工程師' }]);
   });
 });
