@@ -161,4 +161,69 @@ describe('CourseFlyer', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith(['/courses', 1]);
   });
+
+  it('should navigate to the course list when back is pressed before the course loads', () => {
+    const fixture = TestBed.createComponent(CourseFlyer);
+    fixture.detectChanges();
+    const navigateSpy = spyOn(router, 'navigate');
+
+    fixture.componentInstance.back();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/courses']);
+
+    httpMock.expectOne(`${environment.apiUrl}/courses/1`).flush(azureCourse);
+  });
+
+  it('should call window.print on print', async () => {
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const printSpy = spyOn(window, 'print');
+
+    fixture.componentInstance.print();
+
+    expect(printSpy).toHaveBeenCalled();
+  });
+
+  it('should fall back to plain URL text when QR generation fails', async () => {
+    qrCodeService.toDataUrl.and.rejectWith(new Error('qr generation failed'));
+
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.qrCodeDataUrl()).toBeNull();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.flyer-qr')).toBeNull();
+    expect(compiled.textContent).toContain('https://www.uuu.com.tw/Course/Show/1/AZ-900');
+  });
+
+  it('should show the QR-scan clamp note when the outline is clamped and the QR loaded', async () => {
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentInstance.outlineClamped.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.flyer-clamp-note')?.textContent).toContain('請掃描 QR Code');
+  });
+
+  it('should show a plain-URL clamp note when the outline is clamped but the QR failed', async () => {
+    qrCodeService.toDataUrl.and.rejectWith(new Error('qr generation failed'));
+
+    const fixture = createAndLoad();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentInstance.outlineClamped.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const note = compiled.querySelector('.flyer-clamp-note')?.textContent ?? '';
+    expect(note).toContain('https://www.uuu.com.tw/Course/Show/1/AZ-900');
+    expect(note).not.toContain('QR Code');
+  });
 });

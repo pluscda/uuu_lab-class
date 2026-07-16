@@ -155,4 +155,23 @@ describe('CourseDetail', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith(['/courses', 1, 'flyer']);
   });
+
+  it('should not navigate on printFlyer before the course has loaded', () => {
+    const fixture = TestBed.createComponent(CourseDetail);
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+
+    fixture.componentInstance.printFlyer();
+
+    expect(navigateSpy).not.toHaveBeenCalled();
+
+    httpMock.expectOne(`${environment.apiUrl}/courses/1`).flush(azureCourse);
+    httpMock
+      .expectOne(`${environment.apiUrl}/lookups/certifications`)
+      .flush([{ pkid: 10, partnerPkid: 1, title: 'Azure Fundamentals' }]);
+    httpMock
+      .expectOne(`${environment.apiUrl}/lookups/job-categories`)
+      .flush([{ pkid: 1, description: '系統工程師' }]);
+  });
 });
