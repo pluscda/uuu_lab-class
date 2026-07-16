@@ -128,7 +128,7 @@ Update this file when a module is completed or deferred work changes.
 
 ## Testing
 
-- Backend: 160 tests · Frontend: 214 tests — all passing
+- Backend: 160 tests · Frontend: 221 tests — all passing
 
 ## Not Yet Implemented
 
@@ -142,5 +142,6 @@ Remaining modules
 Deferred Course features
 
 - Copy endpoint (`POST /api/courses/{id}/copy`)
-- 列印PDF (QR code done)
 - Primary-Foreign link buttons (parent pages → child lists) once child modules exist
+
+Course detail 列印PDF is done — see `spec/course/CourseFlyer.md`.

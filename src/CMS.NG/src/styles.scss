@@ -94,3 +94,32 @@ h4 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Course flyer print isolation — flyer SCSS can't reach shell ancestors
+   (header.topbar / aside.sidebar / main.content) due to view encapsulation,
+   so the flyer component toggles this body class instead. */
+@media print {
+  body.course-flyer-active {
+    header.topbar,
+    aside.sidebar,
+    p-toast,
+    p-confirmdialog {
+      display: none !important;
+    }
+
+    .layout {
+      display: block;
+      min-height: 0;
+      padding-top: 0;
+    }
+
+    main.content {
+      padding: 0;
+    }
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
