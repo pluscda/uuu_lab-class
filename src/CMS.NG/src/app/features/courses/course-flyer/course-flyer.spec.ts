@@ -151,6 +151,22 @@ describe('CourseFlyer', () => {
     expect(fixture.nativeElement.textContent).toContain('查無資料');
   });
 
+  it('should disable 儲存 PDF until the course has loaded, then enable it', async () => {
+    const fixture = TestBed.createComponent(CourseFlyer);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const printButton = () => compiled.querySelector('p-button[label="儲存 PDF"] button');
+    expect(printButton()?.hasAttribute('disabled')).toBeTrue();
+
+    httpMock.expectOne(`${environment.apiUrl}/courses/1`).flush(azureCourse);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(printButton()?.hasAttribute('disabled')).toBeFalse();
+  });
+
   it('should navigate back to the course detail page', async () => {
     const fixture = createAndLoad();
     await fixture.whenStable();

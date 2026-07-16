@@ -7,7 +7,7 @@
   </div>
   <div class="flyer-toolbar-actions">
     <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (onClick)="back()" />
-    <p-button label="儲存 PDF" icon="pi pi-file-pdf" (onClick)="print()" />
+    <p-button label="儲存 PDF" icon="pi pi-file-pdf" [disabled]="!course()" (onClick)="print()" />
   </div>
 </div>
 
