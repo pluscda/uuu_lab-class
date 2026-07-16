@@ -20,3 +20,5 @@ Deferred work items, written down so they exist. Format: what / why / context / 
   - Why: found during /qa of the course-flyer feature (2026-07-16). `document.documentElement.scrollWidth > clientWidth` is already `true` on the existing Course detail page (818px) at a 375px mobile viewport, before any flyer-specific markup loads — the fixed 238px sidebar plus unconstrained content pushes the whole shell wider than the viewport on every page, not just this feature's. The flyer page overflows further (1053px) because its A4-preview width (210mm ≈ 794px) is intentional per the approved design (WYSIWYG print preview), stacked on top of the pre-existing sidebar overflow.
   - Context: acceptance bar for this admin tool is desktop Chrome/Edge only (see `spec/course/CourseFlyer.md`), so this is deferred, not a shipped-feature bug. Worth a look if mobile/tablet admin use ever becomes a requirement.
   - Effort: M (human ~half day / CC ~1-2h — needs a responsive pass on `app.scss`'s `.sidebar`/`.content`, not just this feature) · Priority: P4.
+
+## Completed
