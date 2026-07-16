@@ -2,6 +2,13 @@
 
 Deferred work items, written down so they exist. Format: what / why / context / effort / priority.
 
+## Testing
+
+- [ ] **Flaky RowAuditBadgeComponent spec — order-dependent state leak** — `row-audit-badge.spec.ts`, "should show the neutral no-history state on the badge and in the dialog when the trail is empty" fails only when the full Angular test suite runs (221 specs), passes cleanly in isolation (verified 4/4 twice on 2026-07-16, via `/qa` and `/ship`).
+  - Why: masks real regressions in CI/`/ship` runs — every future ship has to eyeball-triage this same failure instead of trusting a green suite.
+  - Context: neither `row-audit-badge.spec.ts` nor `row-audit-badge.ts` has been touched by the course-flyer branch; this is pre-existing on `develop`. Root cause is almost certainly shared/static state (a service singleton, a mocked HTTP handler, or DOM leakage) surviving across specs depending on run order — needs a `/investigate` pass, not a guess-fix.
+  - Effort: M (human ~2-4h / CC ~15-30min) · Priority: P0.
+
 ## Course
 
 - [ ] **Course list row print button** — quick 列印傳單 access from `/courses` list rows without opening the detail page first.
